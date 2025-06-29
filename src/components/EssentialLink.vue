@@ -3,7 +3,7 @@
     clickable
     :to="isExternal ? undefined : link"
     :href="isExternal ? link : undefined"
-    target="_blank"
+    :target="isExternal ? '_blank' : undefined"
     v-ripple
     active-class="my-menu-link"
   >
