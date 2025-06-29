@@ -40,6 +40,12 @@ const linksList = [
     link: '/category/list',
   },
   {
+    title: 'Partides',
+    caption: 'Partides del presupost',
+    icon: 'category',
+    link: '/budgetItem/list',
+  },
+  {
     title: 'Docs',
     caption: 'quasar.dev',
     icon: 'school',
