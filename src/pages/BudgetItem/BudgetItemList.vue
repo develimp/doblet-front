@@ -106,6 +106,7 @@
 <script setup>
 import axios from 'axios'
 import { ref, onMounted } from 'vue'
+import { api } from 'boot/axios'
 
 const budgetItems = ref([])
 const subItems = ref([])
@@ -141,7 +142,7 @@ const onSubmit = async () => {
 
     console.log('Payload a enviar:', payload)
 
-    const response = await axios.post('http://127.0.0.1:3000/buys', payload)
+    const response = await api.post('http://127.0.0.1:3000/buys', payload)
     console.log('Compra registrada correctamente:', response.data)
 
     onReset()
