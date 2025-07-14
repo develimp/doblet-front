@@ -6,6 +6,17 @@
 
         <q-toolbar-title> Doblet App </q-toolbar-title>
 
+        <q-btn
+          flat
+          dense
+          round
+          icon="logout"
+          aria-label="Logout"
+          @click="handleLogout"
+          class="q-mr-sm"
+          v-tooltip.bottom="'Cerrar sesión'"
+        />
+
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleRightDrawer" />
       </q-toolbar>
     </q-header>
@@ -30,7 +41,10 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import EssentialLink from 'components/EssentialLink.vue'
+
+const router = useRouter()
 
 const linksList = [
   {
@@ -97,5 +111,10 @@ function toggleLeftDrawer() {
 }
 function toggleRightDrawer() {
   rightDrawerOpen.value = !rightDrawerOpen.value
+}
+
+function handleLogout() {
+  localStorage.removeItem('token')
+  router.replace('/login')
 }
 </script>

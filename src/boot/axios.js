@@ -1,5 +1,6 @@
 import { defineBoot } from '#q-app/wrappers'
 import axios from 'axios'
+import { Notify } from 'quasar'
 
 // Be careful when using SSR for cross-request state pollution
 // due to creating a Singleton instance here;
@@ -16,6 +17,26 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token')
+
+      Notify.create({
+        type: 'warning',
+        message: 'Sessió expirada. Per favor, torna a iniciar sessió.',
+      })
+
+      if (!window.location.href.includes('/login')) {
+        window.location.href = '/#/login'
+      }
+    }
+
+    return Promise.reject(error)
+  },
+)
 
 export default defineBoot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
