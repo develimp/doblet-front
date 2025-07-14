@@ -40,10 +40,9 @@ async function handleLogin() {
       password: password.value,
     })
 
-    const token = res.data.token || res.data.idToken || res.data // según tu backend
+    const token = res.data.token || res.data.idToken || res.data
     localStorage.setItem('token', token)
 
-    // Redirigir a página protegida
     router.push('/')
   } catch (err) {
     console.error('Login error', err)
