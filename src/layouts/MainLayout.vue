@@ -60,6 +60,12 @@ const linksList = [
     link: '/budgetItem/list',
   },
   {
+    title: 'Compres',
+    caption: 'Compres efectuades',
+    icon: 'category',
+    link: '/buy/list',
+  },
+  {
     title: 'Docs',
     caption: 'quasar.dev',
     icon: 'school',
