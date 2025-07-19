@@ -1,22 +1,13 @@
 <template>
   <q-page padding>
     <div v-if="buys.length === 0">No s'han trobat compres.</div>
-    <q-table
-      :rows="buys"
-      :columns="columns"
-      row-key="id"
-      virtual-scroll
-      style="max-height: 70vh"
-      flat
-      bordered
-      class="q-mt-md table-header-bg"
-    >
+    <SpTable :rows="buys" :columns="columns" row-key="id" class="q-mt-md table-header-bg">
       <template v-slot:body-cell-actions="props">
         <q-td :props="props">
           <q-btn icon="edit" flat dense @click="editBuy(props.row)" />
         </q-td>
       </template>
-    </q-table>
+    </SpTable>
     <div class="row items-center justify-end q-mt-md">
       <q-btn
         label="Nova compra"
@@ -51,6 +42,7 @@
 
 <script setup>
 import BuyForm from 'src/components/Buy/BuyForm.vue'
+import SpTable from 'src/components/SpTable.vue'
 import { ref, onMounted } from 'vue'
 import { api } from 'boot/axios'
 
