@@ -10,6 +10,13 @@
     </SpTable>
     <div class="row items-center justify-end q-mt-md">
       <q-btn
+        label="Exportar PDF"
+        color="secondary"
+        icon="picture_as_pdf"
+        class="q-mr-sm"
+        @click="downloadPDF"
+      />
+      <q-btn
         label="Nova compra"
         color="primary"
         icon="add"
@@ -48,6 +55,32 @@ import { api } from 'boot/axios'
 
 const buys = ref([])
 const showDialog = ref(false)
+
+const downloadPDF = async () => {
+  try {
+    const response = await api.get('/buys/pdf', {
+      responseType: 'blob', // Muy importante para tratar respuesta como archivo binario
+    })
+
+    // Crear un objeto URL para el blob PDF
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+
+    // Abrir en una nueva pestaña
+    window.open(url)
+
+    // Si quieres forzar descarga en lugar de abrir:
+    /*
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'buy-list.pdf'); // Nombre archivo para descarga
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    */
+  } catch (error) {
+    console.error('Error descargando PDF:', error)
+  }
+}
 
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
