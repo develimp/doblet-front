@@ -54,16 +54,16 @@ const linksList = [
     link: '/category/list',
   },
   {
-    title: 'Partides',
-    caption: 'Partides del presupost',
-    icon: 'category',
-    link: '/budgetItem/list',
-  },
-  {
     title: 'Compres',
     caption: 'Compres efectuades',
-    icon: 'category',
+    icon: 'shopping_cart',
     link: '/buy/list',
+  },
+  {
+    title: 'Vendes',
+    caption: 'Vendes efectuades',
+    icon: 'local_mall',
+    link: '/sale/list',
   },
   {
     title: 'Docs',
