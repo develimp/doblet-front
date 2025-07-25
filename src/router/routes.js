@@ -7,6 +7,8 @@ const routes = [
       { path: 'category/list', component: () => import('pages/Category/CategoryList.vue') },
       { path: 'buy/list', component: () => import('pages/Buy/BuyList.vue') },
       { path: 'sale/list', component: () => import('pages/Sale/SaleList.vue') },
+      { path: 'supplier/list', component: () => import('pages/Supplier/SupplierList.vue') },
+      { path: 'client/list', component: () => import('pages/Client/ClientList.vue') },
     ],
   },
   {
