@@ -59,24 +59,12 @@ const showDialog = ref(false)
 const downloadPDF = async () => {
   try {
     const response = await api.get('/buys/pdf', {
-      responseType: 'blob', // Muy importante para tratar respuesta como archivo binario
+      responseType: 'blob',
     })
 
-    // Crear un objeto URL para el blob PDF
     const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
 
-    // Abrir en una nueva pestaña
     window.open(url)
-
-    // Si quieres forzar descarga en lugar de abrir:
-    /*
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'buy-list.pdf'); // Nombre archivo para descarga
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    */
   } catch (error) {
     console.error('Error descargando PDF:', error)
   }
@@ -163,7 +151,7 @@ const columns = [
 
 const fetchBuys = async () => {
   try {
-    const response = await api.get('http://127.0.0.1:3000/buys')
+    const response = await api.get('https://api.santspatrons.com/buys')
     buys.value = response.data
   } catch (error) {
     console.error('Error loading buys:', error)

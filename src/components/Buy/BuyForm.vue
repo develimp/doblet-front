@@ -102,7 +102,6 @@
 </template>
 
 <script setup>
-import axios from 'axios'
 import { ref, onMounted } from 'vue'
 import { api } from 'boot/axios'
 
@@ -148,9 +147,9 @@ const onSubmit = async () => {
     if (description.value != null) payload.description = description.value
 
     if (buyToEdit?.id) {
-      await api.patch(`http://127.0.0.1:3000/buys/${buyToEdit.id}`, payload)
+      await api.patch(`https://api.santspatrons.com/buys/${buyToEdit.id}`, payload)
     } else {
-      await api.post('http://127.0.0.1:3000/buys', payload)
+      await api.post('https://api.santspatrons.com/buys', payload)
     }
 
     onReset()
@@ -175,7 +174,7 @@ const onReset = () => {
 
 const fetchBudgetItems = async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:3000/budget-items')
+    const response = await api.get('https://api.santspatrons.com/budget-items')
     budgetItems.value = response.data
   } catch (error) {
     console.error('Error loading budgetItems:', error)
@@ -185,7 +184,7 @@ const fetchBudgetItems = async () => {
 const onBudgetItemSelected = async (id) => {
   selectedSubItem.value = null
   try {
-    const response = await axios.get(`http://127.0.0.1:3000/budget-items/${id}/sub-items`)
+    const response = await api.get(`https://api.santspatrons.com/budget-items/${id}/sub-items`)
     subItems.value = response.data
   } catch (error) {
     console.error('Error loading subItems for budgetItem', id, error)
@@ -194,7 +193,7 @@ const onBudgetItemSelected = async (id) => {
 
 const fetchSuppliers = async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:3000/suppliers')
+    const response = await api.get('https://api.santspatrons.com/suppliers')
     suppliers.value = response.data
   } catch (error) {
     console.error('Error loading suppliers:', error)

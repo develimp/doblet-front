@@ -51,9 +51,9 @@ const onSubmit = async () => {
     if (description.value != null) payload.description = description.value
 
     if (supplierToEdit?.id) {
-      await api.patch(`http://127.0.0.1:3000/suppliers/${supplierToEdit.id}`, payload)
+      await api.patch(`https://api.santspatrons.com/suppliers/${supplierToEdit.id}`, payload)
     } else {
-      await api.post('http://127.0.0.1:3000/suppliers', payload)
+      await api.post('https://api.santspatrons.com/suppliers', payload)
     }
 
     onReset()

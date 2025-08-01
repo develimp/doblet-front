@@ -15,7 +15,7 @@
         icon="add"
         @click="
           () => {
-            selectedSale = null
+            selectedSupplier = null
             showDialog = true
           }
         "
@@ -106,7 +106,7 @@ const columns = [
 
 const fetchSuppliers = async () => {
   try {
-    const response = await api.get('http://127.0.0.1:3000/suppliers')
+    const response = await api.get('https://api.santspatrons.com/suppliers')
     suppliers.value = response.data
   } catch (error) {
     console.error('Error loading suppliers:', error)
