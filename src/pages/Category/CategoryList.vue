@@ -1,15 +1,7 @@
 <template>
   <q-page padding>
     <div v-if="categories.length === 0">No s'han trobat categories.</div>
-    <SpTable
-      :title="`Categories (${countCategory.count})`"
-      :rows="categories"
-      :columns="columns"
-      row-key="id"
-      flat
-      bordered
-      class="q-mt-md"
-    >
+    <SpTable :rows="categories" :columns="columns" row-key="id" class="q-mt-md">
       <template v-slot:body-cell-fee="props">
         <q-td :props="props"> {{ props.row.fee }} € </q-td>
       </template>
@@ -18,7 +10,7 @@
 </template>
 
 <script setup>
-import axios from 'axios'
+import { api } from 'boot/axios'
 import { ref, onMounted } from 'vue'
 import SpTable from 'components/SpTable.vue'
 
@@ -32,7 +24,7 @@ const columns = [
 
 const fetchCount = async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:3000/categories/count')
+    const response = await api.get('https://api.santspatrons.com/categories/count')
     countCategory.value = response.data
   } catch (error) {
     console.error('Error fetching category count:', error)
@@ -41,7 +33,7 @@ const fetchCount = async () => {
 
 const fetchCategories = async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:3000/categories')
+    const response = await api.get('https://api.santspatrons.com/categories')
     categories.value = response.data
   } catch (error) {
     console.error('Error loading categories:', error)

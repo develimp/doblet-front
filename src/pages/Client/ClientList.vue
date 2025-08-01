@@ -15,7 +15,7 @@
         icon="add"
         @click="
           () => {
-            selectedSale = null
+            selectedClient = null
             showDialog = true
           }
         "
@@ -104,9 +104,9 @@ const columns = [
   },
 ]
 
-const fetchclients = async () => {
+const fetchClients = async () => {
   try {
-    const response = await api.get('http://127.0.0.1:3000/clients')
+    const response = await api.get('https://api.santspatrons.com/clients')
     clients.value = response.data
   } catch (error) {
     console.error('Error loading clients:', error)
@@ -116,10 +116,10 @@ const fetchclients = async () => {
 const onClientCreated = async () => {
   showDialog.value = false
   selectedClient.value = null
-  await fetchclients()
+  await fetchClients()
 }
 
 onMounted(async () => {
-  await Promise.all([fetchclients()])
+  await Promise.all([fetchClients()])
 })
 </script>
