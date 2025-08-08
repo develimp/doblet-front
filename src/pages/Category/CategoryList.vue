@@ -14,7 +14,6 @@ import { api } from 'boot/axios'
 import { ref, onMounted } from 'vue'
 import SpTable from 'components/SpTable.vue'
 
-const countCategory = ref({})
 const categories = ref([])
 const columns = [
   { name: 'name', label: 'Categoria', align: 'left', field: 'name' },
@@ -22,18 +21,9 @@ const columns = [
   { name: 'fee', label: 'Quota assignada (€)', align: 'right', field: 'fee' },
 ]
 
-const fetchCount = async () => {
-  try {
-    const response = await api.get('https://api.santspatrons.com/categories/count')
-    countCategory.value = response.data
-  } catch (error) {
-    console.error('Error fetching category count:', error)
-  }
-}
-
 const fetchCategories = async () => {
   try {
-    const response = await api.get('https://api.santspatrons.com/categories')
+    const response = await api.get('/categories')
     categories.value = response.data
   } catch (error) {
     console.error('Error loading categories:', error)
@@ -41,6 +31,6 @@ const fetchCategories = async () => {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchCount(), fetchCategories()])
+  await Promise.all([fetchCategories()])
 })
 </script>

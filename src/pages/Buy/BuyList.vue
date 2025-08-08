@@ -151,7 +151,7 @@ const columns = [
 
 const fetchBuys = async () => {
   try {
-    const response = await api.get('https://api.santspatrons.com/buys')
+    const response = await api.get('/buys')
     buys.value = response.data
   } catch (error) {
     console.error('Error loading buys:', error)

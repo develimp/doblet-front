@@ -8,7 +8,7 @@ import { Notify } from 'quasar'
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
-const api = axios.create({ baseURL: 'https://api.santspatrons.com/' })
+const api = axios.create({ baseURL: import.meta.env.VITE_API_URL })
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
@@ -38,6 +38,8 @@ api.interceptors.response.use(
   },
 )
 
+const publicApi = axios.create({ baseURL: import.meta.env.VITE_API_URL })
+
 export default defineBoot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
 
@@ -50,4 +52,4 @@ export default defineBoot(({ app }) => {
   //       so you can easily perform requests against your app's API
 })
 
-export { api }
+export { api, publicApi }

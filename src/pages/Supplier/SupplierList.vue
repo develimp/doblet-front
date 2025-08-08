@@ -106,7 +106,7 @@ const columns = [
 
 const fetchSuppliers = async () => {
   try {
-    const response = await api.get('https://api.santspatrons.com/suppliers')
+    const response = await api.get('/suppliers')
     suppliers.value = response.data
   } catch (error) {
     console.error('Error loading suppliers:', error)

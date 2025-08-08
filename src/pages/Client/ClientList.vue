@@ -106,7 +106,7 @@ const columns = [
 
 const fetchClients = async () => {
   try {
-    const response = await api.get('https://api.santspatrons.com/clients')
+    const response = await api.get('/clients')
     clients.value = response.data
   } catch (error) {
     console.error('Error loading clients:', error)

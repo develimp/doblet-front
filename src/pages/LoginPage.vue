@@ -25,7 +25,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { publicApi } from 'boot/axios'
 
 const email = ref('')
 const password = ref('')
@@ -35,7 +35,7 @@ const router = useRouter()
 async function handleLogin() {
   loading.value = true
   try {
-    const res = await axios.post('https://api.santspatrons.com/login', {
+    const res = await publicApi.post('/login', {
       email: email.value,
       password: password.value,
     })

@@ -147,9 +147,9 @@ const onSubmit = async () => {
     if (description.value != null) payload.description = description.value
 
     if (buyToEdit?.id) {
-      await api.patch(`https://api.santspatrons.com/buys/${buyToEdit.id}`, payload)
+      await api.patch(`/buys/${buyToEdit.id}`, payload)
     } else {
-      await api.post('https://api.santspatrons.com/buys', payload)
+      await api.post('/buys', payload)
     }
 
     onReset()
@@ -174,7 +174,7 @@ const onReset = () => {
 
 const fetchBudgetItems = async () => {
   try {
-    const response = await api.get('https://api.santspatrons.com/budget-items')
+    const response = await api.get('/budget-items')
     budgetItems.value = response.data
   } catch (error) {
     console.error('Error loading budgetItems:', error)
@@ -184,7 +184,7 @@ const fetchBudgetItems = async () => {
 const onBudgetItemSelected = async (id) => {
   selectedSubItem.value = null
   try {
-    const response = await api.get(`https://api.santspatrons.com/budget-items/${id}/sub-items`)
+    const response = await api.get(`/budget-items/${id}/sub-items`)
     subItems.value = response.data
   } catch (error) {
     console.error('Error loading subItems for budgetItem', id, error)
@@ -193,7 +193,7 @@ const onBudgetItemSelected = async (id) => {
 
 const fetchSuppliers = async () => {
   try {
-    const response = await api.get('https://api.santspatrons.com/suppliers')
+    const response = await api.get('/suppliers')
     suppliers.value = response.data
   } catch (error) {
     console.error('Error loading suppliers:', error)
