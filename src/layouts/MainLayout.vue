@@ -6,16 +6,22 @@
 
         <q-toolbar-title> Doblet App </q-toolbar-title>
 
-        <q-btn
+        <q-btn-dropdown
           flat
-          dense
-          round
-          icon="logout"
-          aria-label="Logout"
-          @click="handleLogout"
-          class="q-mr-sm"
-          v-tooltip.bottom="'Cerrar sesión'"
-        />
+          color="white"
+          icon="account_circle"
+          :label="user?.name || 'Usuari'"
+          class="normal-case"
+        >
+          <q-list>
+            <q-item clickable v-close-popup @click="handleLogout">
+              <q-item-section avatar>
+                <q-icon name="logout" />
+              </q-item-section>
+              <q-item-section>Tancar sessió</q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
 
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleRightDrawer" />
       </q-toolbar>
@@ -23,7 +29,7 @@
 
     <q-drawer show-if-above v-model="leftDrawerOpen" side="left" bordered>
       <q-list>
-        <q-item-label header> Enllaços </q-item-label>
+        <q-item-label header> Mòduls </q-item-label>
 
         <EssentialLink v-for="link in linksList" :key="link.title" v-bind="link" />
       </q-list>
@@ -40,9 +46,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import EssentialLink from 'components/EssentialLink.vue'
+import { api } from 'src/boot/axios'
 
 const router = useRouter()
 
@@ -78,6 +85,12 @@ const linksList = [
     link: '/client/list',
   },
   {
+    title: 'Grafana',
+    caption: 'grafana.santspatrons.com',
+    icon: 'analytics',
+    link: 'https://grafana.santspatrons.com',
+  },
+  {
     title: 'Github',
     caption: 'github.com/develimp',
     icon: 'code',
@@ -87,6 +100,7 @@ const linksList = [
 
 const leftDrawerOpen = ref(false)
 const rightDrawerOpen = ref(false)
+const user = ref(null)
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
@@ -99,4 +113,22 @@ function handleLogout() {
   localStorage.removeItem('token')
   router.replace('/login')
 }
+
+onMounted(async () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    router.replace('/login')
+    return
+  }
+
+  try {
+    const res = await api.get('/whoami', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    user.value = res.data
+  } catch (err) {
+    console.error('Error cargando usuario', err)
+    handleLogout()
+  }
+})
 </script>
