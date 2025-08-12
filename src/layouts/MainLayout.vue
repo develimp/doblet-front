@@ -3,9 +3,7 @@
     <q-header elevated class="bg-primary text-white">
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
-
         <q-toolbar-title> Doblet App </q-toolbar-title>
-
         <q-btn-dropdown
           flat
           color="white"
@@ -29,7 +27,13 @@
 
     <q-drawer show-if-above v-model="leftDrawerOpen" side="left" bordered>
       <q-list>
-        <q-item-label header> Mòduls </q-item-label>
+        <div class="flex justify-center q-my-md">
+          <q-img
+            alt="Falla logo"
+            src="~assets/falla-logo.png"
+            style="max-width: 50%; height: auto"
+          />
+        </div>
 
         <EssentialLink v-for="link in linksList" :key="link.title" v-bind="link" />
       </q-list>
@@ -99,7 +103,7 @@ const linksList = [
 ]
 
 const leftDrawerOpen = ref(false)
-const rightDrawerOpen = ref(false)
+const rightDrawerOpen = ref(true)
 const user = ref(null)
 
 function toggleLeftDrawer() {
