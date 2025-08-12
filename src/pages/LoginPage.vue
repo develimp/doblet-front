@@ -1,16 +1,25 @@
 <template>
   <q-page class="q-pa-md flex flex-center">
     <q-card class="q-pa-lg" style="width: 300px">
-      <q-card-section>
-        <div class="text-h6">Login</div>
-      </q-card-section>
-
+      <div class="flex justify-center q-my-md">
+        <q-img
+          alt="Falla logo"
+          src="~assets/falla-logo.png"
+          style="max-width: 100%; height: auto"
+        />
+      </div>
       <q-card-section>
         <q-form @submit.prevent="handleLogin">
-          <q-input v-model="email" label="Email" type="email" required />
-          <q-input v-model="password" label="Password" type="password" required class="q-mt-md" />
+          <q-input v-model="email" label="Correu electrònic" type="email" required />
+          <q-input
+            v-model="password"
+            label="Contrasenya"
+            type="password"
+            required
+            class="q-mt-md"
+          />
           <q-btn
-            label="Login"
+            label="Iniciar sessió"
             type="submit"
             color="primary"
             class="q-mt-lg full-width"
