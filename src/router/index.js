@@ -5,6 +5,7 @@ import {
   createWebHistory,
   createWebHashHistory,
 } from 'vue-router'
+import { jwtDecode } from 'jwt-decode'
 import routes from './routes'
 
 /*
@@ -33,16 +34,32 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   })
 
-  Router.beforeEach((to, from, next) => {
+  Router.beforeEach((to) => {
     const token = localStorage.getItem('token')
 
-    if (!token && to.path !== '/login') {
-      next('/login')
-    } else if (token && to.path === '/login') {
-      next('/')
-    } else {
-      next()
+    if (to.meta.requiresAuth) {
+      if (!token) {
+        return '/login'
+      }
+
+      try {
+        const { exp } = jwtDecode(token)
+        const isExpired = Date.now() >= exp * 1000
+        if (isExpired) {
+          localStorage.removeItem('token')
+          return '/login'
+        }
+      } catch {
+        localStorage.removeItem('token')
+        return '/login'
+      }
     }
+
+    if (token && to.path === '/login') {
+      return '/'
+    }
+
+    return true
   })
 
   return Router
