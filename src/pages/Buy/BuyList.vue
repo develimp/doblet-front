@@ -1,7 +1,16 @@
 <template>
   <q-page padding>
-    <div v-if="buys.length === 0">No s'han trobat compres.</div>
-    <SpTable :rows="buys" :columns="columns" row-key="id" class="q-mt-md table-header-bg">
+    <div v-if="loading" class="row justify-center q-my-md">
+      <q-spinner-dots size="40px" color="primary" />
+    </div>
+    <div v-else-if="error">
+      <q-banner class="bg-red text-white">
+        Error carregant compres: {{ error.message }}
+        <q-btn flat color="white" label="Reintentar" @click="refetch" />
+      </q-banner>
+    </div>
+    <div v-else-if="data.length === 0">No s'han trobat compres.</div>
+    <SpTable v-else :rows="data" :columns="columns" row-key="id" class="q-mt-md table-header-bg">
       <template v-slot:body-cell-actions="props">
         <q-td :props="props">
           <q-btn icon="edit" flat dense @click="editBuy(props.row)" />
@@ -50,11 +59,14 @@
 <script setup>
 import BuyForm from 'src/components/Buy/BuyForm.vue'
 import SpTable from 'src/components/SpTable.vue'
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { api } from 'boot/axios'
+import { useFetch } from 'src/composables/useFetch'
 
-const buys = ref([])
 const showDialog = ref(false)
+const selectedBuy = ref(null)
+
+const { data, loading, error, refetch } = useFetch('/buys')
 
 const downloadPDF = async () => {
   try {
@@ -80,11 +92,15 @@ const formatDate = (dateStr) => {
   return `${day}-${month}-${year}`
 }
 
-const selectedBuy = ref(null)
-
 const editBuy = (buy) => {
   selectedBuy.value = buy
   showDialog.value = true
+}
+
+const onBuyCreated = async () => {
+  showDialog.value = false
+  selectedBuy.value = null
+  await refetch()
 }
 
 const columns = [
@@ -148,23 +164,4 @@ const columns = [
     sortable: false,
   },
 ]
-
-const fetchBuys = async () => {
-  try {
-    const response = await api.get('/buys')
-    buys.value = response.data
-  } catch (error) {
-    console.error('Error loading buys:', error)
-  }
-}
-
-const onBuyCreated = async () => {
-  showDialog.value = false
-  selectedBuy.value = null
-  await fetchBuys()
-}
-
-onMounted(async () => {
-  await Promise.all([fetchBuys()])
-})
 </script>

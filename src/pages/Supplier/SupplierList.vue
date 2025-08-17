@@ -1,7 +1,16 @@
 <template>
   <q-page padding>
-    <div v-if="suppliers.length === 0">No s'han trobat proveïdors.</div>
-    <SpTable :rows="suppliers" :columns="columns" row-key="id" class="q-mt-md table-header-bg">
+    <div v-if="loading" class="row justify-center q-my-md">
+      <q-spinner-dots size="40px" color="primary" />
+    </div>
+    <div v-else-if="error">
+      <q-banner class="bg-red text-white">
+        Error carregant proveïdors: {{ error.message }}
+        <q-btn flat color="white" label="Reintentar" @click="refetch" />
+      </q-banner>
+    </div>
+    <div v-else-if="data.length === 0">No s'han trobat proveïdors.</div>
+    <SpTable v-else :rows="data" :columns="columns" row-key="id" class="q-mt-md table-header-bg">
       <template v-slot:body-cell-actions="props">
         <q-td :props="props">
           <q-btn icon="edit" flat dense @click="editSupplier(props.row)" />
@@ -47,15 +56,23 @@
 <script setup>
 import SpTable from 'src/components/SpTable.vue'
 import SupplierForm from 'src/components/Supplier/SupplierForm.vue'
-import { ref, onMounted } from 'vue'
-import { api } from 'boot/axios'
+import { ref } from 'vue'
+import { useFetch } from 'src/composables/useFetch'
 
-const suppliers = ref([])
 const showDialog = ref(false)
 const selectedSupplier = ref(null)
+
+const { data, loading, error, refetch } = useFetch('/suppliers')
+
 const editSupplier = (supplier) => {
   selectedSupplier.value = supplier
   showDialog.value = true
+}
+
+const onSupplierCreated = async () => {
+  showDialog.value = false
+  selectedSupplier.value = null
+  await refetch()
 }
 
 const columns = [
@@ -103,23 +120,4 @@ const columns = [
     sortable: false,
   },
 ]
-
-const fetchSuppliers = async () => {
-  try {
-    const response = await api.get('/suppliers')
-    suppliers.value = response.data
-  } catch (error) {
-    console.error('Error loading suppliers:', error)
-  }
-}
-
-const onSupplierCreated = async () => {
-  showDialog.value = false
-  selectedSupplier.value = null
-  await fetchSuppliers()
-}
-
-onMounted(async () => {
-  await Promise.all([fetchSuppliers()])
-})
 </script>
