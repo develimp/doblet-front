@@ -1,7 +1,16 @@
 <template>
   <q-page padding>
-    <div v-if="sales.length === 0">No s'han trobat vendes.</div>
-    <SpTable :rows="sales" :columns="columns" row-key="id" class="q-mt-md table-header-bg">
+    <div v-if="loading" class="row justify-center q-my-md">
+      <q-spinner-dots size="40px" color="primary" />
+    </div>
+    <div v-else-if="error">
+      <q-banner class="bg-red text-white">
+        Error carregant vendes: {{ error.message }}
+        <q-btn flat color="white" label="Reintentar" @click="refetch" />
+      </q-banner>
+    </div>
+    <div v-else-if="data.length === 0">No s'han trobat vendes.</div>
+    <SpTable v-else :rows="data" :columns="columns" row-key="id" class="q-mt-md table-header-bg">
       <template v-slot:body-cell-actions="props">
         <q-td :props="props">
           <q-btn icon="edit" flat dense @click="editSale(props.row)" />
@@ -47,11 +56,13 @@
 <script setup>
 import SaleForm from 'src/components/Sale/SaleForm.vue'
 import SpTable from 'src/components/SpTable.vue'
-import { ref, onMounted } from 'vue'
-import { api } from 'boot/axios'
+import { ref } from 'vue'
+import { useFetch } from 'src/composables/useFetch'
 
-const sales = ref([])
 const showDialog = ref(false)
+const selectedSale = ref(null)
+
+const { data, loading, error, refetch } = useFetch('/sales')
 
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
@@ -63,11 +74,15 @@ const formatDate = (dateStr) => {
   return `${day}-${month}-${year}`
 }
 
-const selectedSale = ref(null)
-
 const editSale = (sale) => {
   selectedSale.value = sale
   showDialog.value = true
+}
+
+const onSaleCreated = async () => {
+  showDialog.value = false
+  selectedSale.value = null
+  await refetch()
 }
 
 const columns = [
@@ -131,23 +146,4 @@ const columns = [
     sortable: false,
   },
 ]
-
-const fetchsales = async () => {
-  try {
-    const response = await api.get('/sales')
-    sales.value = response.data
-  } catch (error) {
-    console.error('Error loading sales:', error)
-  }
-}
-
-const onSaleCreated = async () => {
-  showDialog.value = false
-  selectedSale.value = null
-  await fetchsales()
-}
-
-onMounted(async () => {
-  await Promise.all([fetchsales()])
-})
 </script>

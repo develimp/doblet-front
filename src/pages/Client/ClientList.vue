@@ -1,7 +1,16 @@
 <template>
   <q-page padding>
-    <div v-if="clients.length === 0">No s'han trobat clients.</div>
-    <SpTable :rows="clients" :columns="columns" row-key="id" class="q-mt-md table-header-bg">
+    <div v-if="loading" class="row justify-center q-my-md">
+      <q-spinner-dots size="40px" color="primary" />
+    </div>
+    <div v-else-if="error">
+      <q-banner class="bg-red text-white">
+        Error carregant clients: {{ error.message }}
+        <q-btn flat color="white" label="Reintentar" @click="refetch" />
+      </q-banner>
+    </div>
+    <div v-else-if="data.length === 0">No s'han trobat clients.</div>
+    <SpTable v-else :rows="data" :columns="columns" row-key="id" class="q-mt-md table-header-bg">
       <template v-slot:body-cell-actions="props">
         <q-td :props="props">
           <q-btn icon="edit" flat dense @click="editClient(props.row)" />
@@ -47,15 +56,23 @@
 <script setup>
 import SpTable from 'src/components/SpTable.vue'
 import ClientForm from 'src/components/Client/ClientForm.vue'
-import { ref, onMounted } from 'vue'
-import { api } from 'boot/axios'
+import { ref } from 'vue'
+import { useFetch } from 'src/composables/useFetch'
 
-const clients = ref([])
 const showDialog = ref(false)
 const selectedClient = ref(null)
+
+const { data, loading, error, refetch } = useFetch('/clients')
+
 const editClient = (client) => {
   selectedClient.value = client
   showDialog.value = true
+}
+
+const onClientCreated = async () => {
+  showDialog.value = false
+  selectedClient.value = null
+  await refetch()
 }
 
 const columns = [
@@ -103,23 +120,4 @@ const columns = [
     sortable: false,
   },
 ]
-
-const fetchClients = async () => {
-  try {
-    const response = await api.get('/clients')
-    clients.value = response.data
-  } catch (error) {
-    console.error('Error loading clients:', error)
-  }
-}
-
-const onClientCreated = async () => {
-  showDialog.value = false
-  selectedClient.value = null
-  await fetchClients()
-}
-
-onMounted(async () => {
-  await Promise.all([fetchClients()])
-})
 </script>
