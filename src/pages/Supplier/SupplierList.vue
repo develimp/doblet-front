@@ -56,22 +56,19 @@
 <script setup>
 import SpTable from 'src/components/SpTable.vue'
 import SupplierForm from 'src/components/Supplier/SupplierForm.vue'
-import { ref } from 'vue'
 import { useFetch } from 'src/composables/useFetch'
-
-const showDialog = ref(false)
-const selectedSupplier = ref(null)
+import { useCrudDialog } from 'src/composables/useCrudDialog'
 
 const { data, loading, error, refetch } = useFetch('/suppliers')
 
+const { showDialog, selectedItem: selectedSupplier, openDialog, closeDialog } = useCrudDialog()
+
 const editSupplier = (supplier) => {
-  selectedSupplier.value = supplier
-  showDialog.value = true
+  openDialog(supplier)
 }
 
 const onSupplierCreated = async () => {
-  showDialog.value = false
-  selectedSupplier.value = null
+  closeDialog()
   await refetch()
 }
 

@@ -56,22 +56,19 @@
 <script setup>
 import SpTable from 'src/components/SpTable.vue'
 import ClientForm from 'src/components/Client/ClientForm.vue'
-import { ref } from 'vue'
 import { useFetch } from 'src/composables/useFetch'
-
-const showDialog = ref(false)
-const selectedClient = ref(null)
+import { useCrudDialog } from 'src/composables/useCrudDialog'
 
 const { data, loading, error, refetch } = useFetch('/clients')
 
+const { showDialog, selectedItem: selectedClient, openDialog, closeDialog } = useCrudDialog()
+
 const editClient = (client) => {
-  selectedClient.value = client
-  showDialog.value = true
+  openDialog(client)
 }
 
 const onClientCreated = async () => {
-  showDialog.value = false
-  selectedClient.value = null
+  closeDialog()
   await refetch()
 }
 

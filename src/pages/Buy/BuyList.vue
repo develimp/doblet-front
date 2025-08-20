@@ -59,14 +59,16 @@
 <script setup>
 import BuyForm from 'src/components/Buy/BuyForm.vue'
 import SpTable from 'src/components/SpTable.vue'
-import { ref } from 'vue'
 import { api } from 'boot/axios'
 import { useFetch } from 'src/composables/useFetch'
-
-const showDialog = ref(false)
-const selectedBuy = ref(null)
+import { useDateFormat } from 'src/composables/useDateFormat'
+import { useCrudDialog } from 'src/composables/useCrudDialog'
 
 const { data, loading, error, refetch } = useFetch('/buys')
+
+const { formatDate } = useDateFormat()
+
+const { showDialog, selectedItem: selectedBuy, openDialog, closeDialog } = useCrudDialog()
 
 const downloadPDF = async () => {
   try {
@@ -82,24 +84,12 @@ const downloadPDF = async () => {
   }
 }
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  if (isNaN(d)) return ''
-  const day = String(d.getUTCDate()).padStart(2, '0')
-  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
-  const year = d.getUTCFullYear()
-  return `${day}-${month}-${year}`
-}
-
 const editBuy = (buy) => {
-  selectedBuy.value = buy
-  showDialog.value = true
+  openDialog(buy)
 }
 
 const onBuyCreated = async () => {
-  showDialog.value = false
-  selectedBuy.value = null
+  closeDialog()
   await refetch()
 }
 

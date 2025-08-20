@@ -56,32 +56,22 @@
 <script setup>
 import SaleForm from 'src/components/Sale/SaleForm.vue'
 import SpTable from 'src/components/SpTable.vue'
-import { ref } from 'vue'
 import { useFetch } from 'src/composables/useFetch'
-
-const showDialog = ref(false)
-const selectedSale = ref(null)
+import { useDateFormat } from 'src/composables/useDateFormat'
+import { useCrudDialog } from 'src/composables/useCrudDialog'
 
 const { data, loading, error, refetch } = useFetch('/sales')
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  if (isNaN(d)) return ''
-  const day = String(d.getUTCDate()).padStart(2, '0')
-  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
-  const year = d.getUTCFullYear()
-  return `${day}-${month}-${year}`
-}
+const { formatDate } = useDateFormat()
+
+const { showDialog, selectedItem: selectedSale, openDialog, closeDialog } = useCrudDialog()
 
 const editSale = (sale) => {
-  selectedSale.value = sale
-  showDialog.value = true
+  openDialog(sale)
 }
 
 const onSaleCreated = async () => {
-  showDialog.value = false
-  selectedSale.value = null
+  closeDialog()
   await refetch()
 }
 
