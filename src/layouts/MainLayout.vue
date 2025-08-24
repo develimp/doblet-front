@@ -59,6 +59,18 @@ const router = useRouter()
 
 const linksList = [
   {
+    title: 'Inici',
+    caption: 'Pàgina principal',
+    icon: 'home',
+    link: '/',
+  },
+  {
+    title: 'Domiciliacions',
+    caption: 'Gestió de domiciliacions',
+    icon: 'credit_card',
+    link: '/directDebit/list',
+  },
+  {
     title: 'Categories',
     caption: 'Categories dels fallers',
     icon: 'category',

@@ -5,6 +5,11 @@ const routes = [
     children: [
       { path: '', component: () => import('pages/IndexPage.vue'), meta: { requiresAuth: true } },
       {
+        path: 'directDebit/list',
+        component: () => import('pages/DirectDebit/DirectDebitList.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: 'category/list',
         component: () => import('pages/Category/CategoryList.vue'),
         meta: { requiresAuth: true },
