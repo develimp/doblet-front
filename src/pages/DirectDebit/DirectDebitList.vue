@@ -126,7 +126,7 @@
             <q-popup-proxy ref="popupRegisterRef" transition-show="scale" transition-hide="scale">
               <q-date
                 v-model="registerDate"
-                @update:model-value="popupRegisterRef.hide()"
+                @update:model-value="popupRegisterRef?.hide?.()"
                 color="primary"
               />
             </q-popup-proxy>
@@ -194,8 +194,10 @@ const registering = ref(false)
 const registerDirectDebitPayments = async () => {
   try {
     registering.value = true
+    const formattedDate = registerDate.value ? registerDate.value.replace(/\//g, '-') : null
+
     await api.post('/members/register-all-direct-debit-payments', {
-      date: registerDate.value,
+      date: formattedDate,
       note: registerNote.value,
     })
 
