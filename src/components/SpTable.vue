@@ -10,8 +10,11 @@
     virtual-scroll-item-size="48"
     virtual-scroll-slice-size="20"
     style="max-height: 70vh; overflow-y: auto"
-    :rows-per-page-options="[0]"
-    :pagination="{ rowsPerPage: 0 }"
+    :pagination="pagination"
+    @update:pagination="$emit('update:pagination', $event)"
+    :loading="loading"
+    :rows-number="rowsNumber"
+    @request="$emit('request', $event)"
     v-bind="$attrs"
   >
     <template v-for="(slotFn, name) in slots" :key="name" v-slot:[name]="scope">
@@ -26,14 +29,11 @@ import { useSlots } from 'vue'
 const slots = useSlots()
 
 defineProps({
-  rows: {
-    type: Array,
-    required: true,
-  },
-  columns: {
-    type: Array,
-    required: true,
-  },
+  rows: { type: Array, required: true },
+  columns: { type: Array, required: true },
+  loading: { type: Boolean, default: false },
+  pagination: { type: Object, default: () => ({ rowsPerPage: 0 }) },
+  rowsNumber: { type: Number, default: 0 },
 })
 </script>
 

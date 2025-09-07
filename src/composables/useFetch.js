@@ -6,11 +6,11 @@ export function useFetch(endpoint) {
   const loading = ref(true)
   const error = ref(null)
 
-  const fetchData = async () => {
+  const fetchData = async (options = {}) => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get(endpoint)
+      const response = await api.get(endpoint, options)
       data.value = response.data
     } catch (err) {
       error.value = err
