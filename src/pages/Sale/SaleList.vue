@@ -6,11 +6,25 @@
     <div v-else-if="error">
       <q-banner class="bg-red text-white">
         Error carregant vendes: {{ error.message }}
-        <q-btn flat color="white" label="Reintentar" @click="refetch" />
+        <q-btn
+          flat
+          color="white"
+          label="Reintentar"
+          @click="refetch({ params: { filter: { order: ['sold DESC'] } } })"
+        />
       </q-banner>
     </div>
     <div v-else-if="data.length === 0">No s'han trobat vendes.</div>
-    <SpTable v-else :rows="data" :columns="columns" row-key="id" class="q-mt-md table-header-bg">
+    <SpTable
+      v-else
+      :rows="data || []"
+      :columns="columns"
+      row-key="id"
+      class="q-mt-md table-header-bg"
+      :loading="loading"
+      v-model:pagination="pagination"
+      @request="onRequest"
+    >
       <template v-slot:body-cell-actions="props">
         <q-td :props="props">
           <q-btn icon="edit" flat dense @click="editSale(props.row)" />
@@ -54,6 +68,7 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import SaleForm from 'src/components/Sale/SaleForm.vue'
 import SpTable from 'src/components/SpTable.vue'
 import { useFetch } from 'src/composables/useFetch'
@@ -73,6 +88,26 @@ const editSale = (sale) => {
 const onSaleCreated = async () => {
   closeDialog()
   await refetch()
+}
+
+const pagination = ref({
+  sortBy: 'sold',
+  descending: true,
+  page: 1,
+  rowsPerPage: 15,
+})
+
+const onRequest = async ({ pagination: p }) => {
+  const { sortBy, descending, page, rowsPerPage } = p
+  await refetch({
+    params: {
+      filter: {
+        order: [`${sortBy} ${descending ? 'DESC' : 'ASC'}`],
+        limit: rowsPerPage,
+        skip: (page - 1) * rowsPerPage,
+      },
+    },
+  })
 }
 
 const columns = [
@@ -102,7 +137,14 @@ const columns = [
     format: (val) => (val != null ? `${val} €` : ''),
   },
   { name: 'payMethod', label: 'Mètode de pagament', align: 'left', field: 'payMethod' },
-  { name: 'sold', label: 'Data de venda', align: 'left', field: 'sold', format: formatDate },
+  {
+    name: 'sold',
+    label: 'Data de pagament',
+    align: 'left',
+    field: 'sold',
+    format: formatDate,
+    sortable: true,
+  },
   {
     name: 'digitizedDocument',
     label: 'Document digitalitzat',
@@ -111,7 +153,7 @@ const columns = [
   },
   {
     name: 'created',
-    label: 'Data de creació',
+    label: 'Data de facturació',
     align: 'left',
     field: 'created',
     format: formatDate,

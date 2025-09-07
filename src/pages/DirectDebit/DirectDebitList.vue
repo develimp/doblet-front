@@ -6,11 +6,25 @@
     <div v-else-if="error">
       <q-banner class="bg-red text-white">
         Error carregant la domiciliació: {{ error.message }}
-        <q-btn flat color="white" label="Reintentar" @click="refetch" />
+        <q-btn
+          flat
+          color="white"
+          label="Reintentar"
+          @click="refetch({ params: { filter: { order: ['member ASC'] } } })"
+        />
       </q-banner>
     </div>
     <div v-else-if="data.length === 0">No s'han trobat domiciliacions.</div>
-    <SpTable v-else :rows="data" :columns="columns" row-key="id" class="q-mt-md table-header-bg">
+    <SpTable
+      v-else
+      :rows="data || []"
+      :columns="columns"
+      row-key="id"
+      class="q-mt-md table-header-bg"
+      :loading="loading"
+      v-model:pagination="pagination"
+      @request="onRequest"
+    >
       <template v-slot:body-cell-actions="props">
         <q-td :props="props">
           <q-btn icon="edit" flat dense @click="editDirectDebit(props.row)" />
@@ -229,13 +243,32 @@ const deleteDirectDebit = (directDebit) => {
   })
 }
 
+const pagination = ref({
+  sortBy: 'member',
+  descending: false,
+  page: 1,
+  rowsPerPage: 15,
+})
+
+const onRequest = async ({ pagination: p }) => {
+  const { sortBy, descending, page, rowsPerPage } = p
+  await refetch({
+    params: {
+      filter: {
+        order: [`${sortBy} ${descending ? 'DESC' : 'ASC'}`],
+        limit: rowsPerPage,
+        skip: (page - 1) * rowsPerPage,
+      },
+    },
+  })
+}
+
 const columns = [
   {
     name: 'member',
     label: 'Titular',
     align: 'left',
-    field: (row) => row.member,
-    format: (val) => `${val.name} ${val.surname}`,
+    field: (row) => `${row.member.name} ${row.member.surname}`,
     sortable: true,
   },
   {
@@ -243,6 +276,7 @@ const columns = [
     label: 'Iban',
     align: 'left',
     field: 'accountNumber',
+    sortable: true,
   },
   {
     name: 'calculatedAmount',
