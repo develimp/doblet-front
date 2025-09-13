@@ -189,7 +189,13 @@ const onBudgetItemSelected = async (id) => {
 
 const fetchClients = async () => {
   try {
-    const response = await api.get('/clients')
+    const response = await api.get('/clients', {
+      params: {
+        filter: {
+          order: ['name ASC'],
+        },
+      },
+    })
     clients.value = response.data
   } catch (error) {
     console.error('Error loading clients:', error)

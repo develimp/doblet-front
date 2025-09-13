@@ -193,7 +193,13 @@ const onBudgetItemSelected = async (id) => {
 
 const fetchSuppliers = async () => {
   try {
-    const response = await api.get('/suppliers')
+    const response = await api.get('/suppliers', {
+      params: {
+        filter: {
+          order: ['name ASC'],
+        },
+      },
+    })
     suppliers.value = response.data
   } catch (error) {
     console.error('Error loading suppliers:', error)
