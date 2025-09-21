@@ -22,6 +22,7 @@
       row-key="id"
       class="q-mt-md table-header-bg"
       :loading="loading"
+      :rows-number="rowsNumber"
       v-model:pagination="pagination"
       @request="onRequest"
     >
@@ -71,19 +72,62 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import BuyForm from 'src/components/Buy/BuyForm.vue'
 import SpTable from 'src/components/SpTable.vue'
 import { api } from 'boot/axios'
 import { useFetch } from 'src/composables/useFetch'
 import { useDateFormat } from 'src/composables/useDateFormat'
 import { useCrudDialog } from 'src/composables/useCrudDialog'
+import BuyFilters from 'src/components/Buy/BuyFilters.vue'
+import { useRightDrawer } from 'src/composables/useRightDrawer'
+import { h, onMounted, onUnmounted } from 'vue'
 
 const { data, loading, error, refetch } = useFetch('/buys')
 
 const { formatDate } = useDateFormat()
 
 const { showDialog, selectedItem: selectedBuy, openDialog, closeDialog } = useCrudDialog()
+
+const { setRightDrawer, clearRightDrawer } = useRightDrawer()
+
+const filters = ref({
+  supplierFk: null,
+  payMethod: null,
+  buyedFrom: null,
+  buyedTo: null,
+})
+
+watch(
+  filters,
+  () => {
+    pagination.value.page = 1
+    onRequest({ pagination: pagination.value })
+  },
+  { deep: true },
+)
+
+onMounted(() => {
+  setRightDrawer(() =>
+    h(BuyFilters, {
+      supplier: filters.value.supplierFk,
+      'onUpdate:supplier': (val) => (filters.value.supplierFk = val),
+
+      payMethod: filters.value.payMethod,
+      'onUpdate:payMethod': (val) => (filters.value.payMethod = val),
+
+      buyedFrom: filters.value.buyedFrom,
+      'onUpdate:buyedFrom': (val) => (filters.value.buyedFrom = val),
+
+      buyedTo: filters.value.buyedTo,
+      'onUpdate:buyedTo': (val) => (filters.value.buyedTo = val),
+    }),
+  )
+})
+
+onUnmounted(() => {
+  clearRightDrawer()
+})
 
 const downloadPDF = async () => {
   try {
@@ -115,17 +159,47 @@ const pagination = ref({
   rowsPerPage: 15,
 })
 
+const rowsNumber = ref(0)
+
 const onRequest = async ({ pagination: p }) => {
   const { sortBy, descending, page, rowsPerPage } = p
-  await refetch({
-    params: {
-      filter: {
-        order: [`${sortBy} ${descending ? 'DESC' : 'ASC'}`],
-        limit: rowsPerPage,
-        skip: (page - 1) * rowsPerPage,
-      },
-    },
-  })
+
+  const where = {}
+  if (filters.value.supplierFk) {
+    where.supplierFk = filters.value.supplierFk
+  }
+  if (filters.value.payMethod) {
+    where.payMethod = filters.value.payMethod
+  }
+  if (filters.value.buyedFrom && filters.value.buyedTo) {
+    where.buyed = {
+      between: [filters.value.buyedFrom, filters.value.buyedTo],
+    }
+  }
+
+  const filter = {
+    order: [`${sortBy} ${descending ? 'DESC' : 'ASC'}`],
+    limit: rowsPerPage,
+    skip: (page - 1) * rowsPerPage,
+    where,
+  }
+
+  try {
+    await refetch({ params: { filter } })
+
+    const countRes = await api.get('/buys/count', { params: { where } })
+    rowsNumber.value = countRes.data.count
+
+    pagination.value = {
+      page,
+      rowsPerPage,
+      sortBy,
+      descending,
+      rowsNumber: rowsNumber.value,
+    }
+  } catch (err) {
+    console.error('Error en onRequest:', err)
+  }
 }
 
 const columns = [

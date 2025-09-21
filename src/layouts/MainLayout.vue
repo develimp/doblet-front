@@ -40,7 +40,9 @@
     </q-drawer>
 
     <q-drawer show-if-above v-model="rightDrawerOpen" side="right" bordered>
-      <!-- drawer content -->
+      <div v-if="rightDrawerContent" class="q-pa-md">
+        <component :is="rightDrawerContent" />
+      </div>
     </q-drawer>
 
     <q-page-container>
@@ -54,6 +56,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import EssentialLink from 'components/EssentialLink.vue'
 import { api } from 'src/boot/axios'
+import { rightDrawerContent } from 'src/composables/useRightDrawer'
 
 const router = useRouter()
 
