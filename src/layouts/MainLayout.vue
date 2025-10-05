@@ -68,6 +68,12 @@ const linksList = [
     link: '/',
   },
   {
+    title: 'Fallers',
+    caption: 'Pagament dels fallers',
+    icon: 'people_alt',
+    link: '/member/payment',
+  },
+  {
     title: 'Domiciliacions',
     caption: 'Gestió de domiciliacions',
     icon: 'credit_card',
