@@ -294,6 +294,24 @@ const submitPayments = async () => {
     await Promise.all(promises)
     Notify.create({ type: 'positive', message: 'Pagaments guardats correctament' })
 
+    try {
+      const paymentData = {
+        pay_fee: rows.value[0].newPayment,
+        pay_lottery: rows.value[1].newPayment,
+        pay_raffle: rows.value[2].newPayment,
+      }
+
+      const pdfResponse = await api.post(`/movements/receipt/${memberId}`, paymentData, {
+        responseType: 'blob',
+      })
+
+      const fileURL = URL.createObjectURL(pdfResponse.data)
+      window.open(fileURL, '_blank')
+    } catch (pdfError) {
+      console.error('Error obrint el rebut PDF:', pdfError)
+      Notify.create({ type: 'warning', message: 'No s’ha pogut generar el rebut PDF' })
+    }
+
     await fetchBalance(memberId)
 
     rows.value.forEach((row) => {
