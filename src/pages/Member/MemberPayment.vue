@@ -113,6 +113,28 @@
         :disable="!selectedMember"
       />
     </div>
+
+    <q-dialog v-model="showEmailDialog" persistent>
+      <q-card style="min-width: 400px">
+        <q-card-section>
+          <div class="text-h6">Confirmar correu</div>
+          <div class="text-subtitle2 q-mt-sm">Introdueix o confirma el correu del membre:</div>
+          <q-input
+            v-model="memberEmail"
+            label="Correu electrònic"
+            type="email"
+            dense
+            autofocus
+            :rules="[(val) => !!val || 'El correu és obligatori']"
+          />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" color="negative" @click="cancelAndShowPDF" />
+          <q-btn label="Acceptar" color="primary" :loading="sending" @click="confirmAndSend" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -262,6 +284,96 @@ const conceptMap = {
   Rifa: 3,
 }
 
+const showEmailDialog = ref(false)
+const memberEmail = ref('')
+const sending = ref(false)
+const currentMember = ref(null)
+let pendingPaymentData = null
+
+async function openEmailDialog(memberId, paymentData) {
+  try {
+    // Cargar el membre (para obtener email)
+    const res = await api.get(`/members/${memberId}`)
+    currentMember.value = res.data
+    memberEmail.value = res.data.email || ''
+    pendingPaymentData = paymentData
+    showEmailDialog.value = true
+  } catch (err) {
+    console.error('Error obtenint membre:', err)
+    Notify.create({ type: 'negative', message: 'Error obtenint el membre' })
+  }
+}
+
+async function confirmAndSend() {
+  sending.value = true
+  try {
+    // Guardar el correo si ha cambiado
+    if (memberEmail.value !== currentMember.value.email) {
+      await api.patch(`/members/${currentMember.value.id}`, { email: memberEmail.value })
+    }
+
+    // Enviar el rebut per correu
+    await api.post(`/movements/send-receipt/${currentMember.value.id}`, pendingPaymentData)
+
+    // Obtenir el PDF i obrir-lo (com abans feia sendReceipt)
+    const pdfResponse = await api.post(
+      `/movements/receipt/${currentMember.value.id}`,
+      pendingPaymentData,
+      { responseType: 'blob' },
+    )
+
+    const pdfUrl = URL.createObjectURL(new Blob([pdfResponse.data], { type: 'application/pdf' }))
+    window.open(pdfUrl, '_blank')
+
+    Notify.create({ type: 'positive', message: 'Rebut enviat i obert correctament!' })
+    showEmailDialog.value = false
+  } catch (err) {
+    if (err === false) {
+      // Usuario canceló el diálogo: no enviar correo, solo mostrar PDF
+      try {
+        const pdfResponse = await api.post(
+          `/movements/receipt/${currentMember.value.id}`,
+          pendingPaymentData,
+          { responseType: 'blob' },
+        )
+        const pdfUrl = URL.createObjectURL(
+          new Blob([pdfResponse.data], { type: 'application/pdf' }),
+        )
+        window.open(pdfUrl, '_blank')
+        Notify.create({ type: 'info', message: 'PDF obert sense enviar correu' })
+      } catch (pdfErr) {
+        console.error('Error generant el PDF sense enviar correu:', pdfErr)
+        Notify.create({ type: 'negative', message: 'No s’ha pogut generar el PDF' })
+      }
+    } else {
+      console.error('Error enviant el rebut:', err)
+      Notify.create({ type: 'negative', message: 'No s’ha pogut enviar el rebut' })
+    }
+  } finally {
+    sending.value = false
+  }
+}
+
+function cancelAndShowPDF() {
+  showEmailDialog.value = false // cerrar diálogo
+
+  if (!currentMember.value || !pendingPaymentData) return
+
+  api
+    .post(`/movements/receipt/${currentMember.value.id}`, pendingPaymentData, {
+      responseType: 'blob',
+    })
+    .then((pdfResponse) => {
+      const pdfUrl = URL.createObjectURL(new Blob([pdfResponse.data], { type: 'application/pdf' }))
+      window.open(pdfUrl, '_blank')
+      Notify.create({ type: 'info', message: 'PDF obert sense enviar correu' })
+    })
+    .catch((err) => {
+      console.error('Error generant el PDF sense enviar correu:', err)
+      Notify.create({ type: 'negative', message: 'No s’ha pogut generar el PDF' })
+    })
+}
+
 const submitPayments = async () => {
   if (!selectedMember.value) {
     Notify.create({ type: 'warning', message: 'Selecciona un membre primer' })
@@ -294,22 +406,14 @@ const submitPayments = async () => {
     await Promise.all(promises)
     Notify.create({ type: 'positive', message: 'Pagaments guardats correctament' })
 
-    try {
+    if (paymentMethod.value === 'cash') {
       const paymentData = {
         pay_fee: rows.value[0].newPayment,
         pay_lottery: rows.value[1].newPayment,
         pay_raffle: rows.value[2].newPayment,
       }
 
-      const pdfResponse = await api.post(`/movements/receipt/${memberId}`, paymentData, {
-        responseType: 'blob',
-      })
-
-      const fileURL = URL.createObjectURL(pdfResponse.data)
-      window.open(fileURL, '_blank')
-    } catch (pdfError) {
-      console.error('Error obrint el rebut PDF:', pdfError)
-      Notify.create({ type: 'warning', message: 'No s’ha pogut generar el rebut PDF' })
+      await openEmailDialog(memberId, paymentData)
     }
 
     await fetchBalance(memberId)
