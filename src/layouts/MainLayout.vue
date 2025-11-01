@@ -74,6 +74,12 @@ const linksList = [
     link: '/member/payment',
   },
   {
+    title: 'Loteria',
+    caption: 'Gestió de la loteria',
+    icon: 'celebration',
+    link: '/lottery/list',
+  },
+  {
     title: 'Domiciliacions',
     caption: 'Gestió de domiciliacions',
     icon: 'credit_card',

@@ -6,10 +6,6 @@
     :rows="rows"
     :columns="columns"
     row-key="id"
-    virtual-scroll
-    virtual-scroll-item-size="48"
-    virtual-scroll-slice-size="20"
-    style="max-height: 70vh; overflow-y: auto"
     :pagination="pagination"
     @update:pagination="$emit('update:pagination', $event)"
     :loading="loading"

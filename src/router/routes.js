@@ -10,6 +10,11 @@ const routes = [
         meta: { requiresAuth: true },
       },
       {
+        path: 'lottery/list',
+        component: () => import('pages/Lottery/LotteryList.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: 'directDebit/list',
         component: () => import('pages/DirectDebit/DirectDebitList.vue'),
         meta: { requiresAuth: true },
