@@ -69,7 +69,6 @@
               />
             </div>
             <div class="col text-center">
-              <!-- mostramos row.newPaymentDisplay y controlamos actualizaciones -->
               <q-input
                 v-if="row.label !== 'Totals'"
                 :model-value="row.newPaymentDisplay"
@@ -167,7 +166,7 @@ const fetchMembers = async () => {
     members.value = response.data
     filteredMembers.value = response.data
   } catch (error) {
-    console.error('Error loading suppliers:', error)
+    console.error('Error loading members:', error)
   }
 }
 
@@ -292,7 +291,6 @@ let pendingPaymentData = null
 
 async function openEmailDialog(memberId, paymentData) {
   try {
-    // Cargar el membre (para obtener email)
     const res = await api.get(`/members/${memberId}`)
     currentMember.value = res.data
     memberEmail.value = res.data.email || ''
@@ -307,15 +305,12 @@ async function openEmailDialog(memberId, paymentData) {
 async function confirmAndSend() {
   sending.value = true
   try {
-    // Guardar el correo si ha cambiado
     if (memberEmail.value !== currentMember.value.email) {
       await api.patch(`/members/${currentMember.value.id}`, { email: memberEmail.value })
     }
 
-    // Enviar el rebut per correu
     await api.post(`/movements/send-receipt/${currentMember.value.id}`, pendingPaymentData)
 
-    // Obtenir el PDF i obrir-lo (com abans feia sendReceipt)
     const pdfResponse = await api.post(
       `/movements/receipt/${currentMember.value.id}`,
       pendingPaymentData,
@@ -329,7 +324,6 @@ async function confirmAndSend() {
     showEmailDialog.value = false
   } catch (err) {
     if (err === false) {
-      // Usuario canceló el diálogo: no enviar correo, solo mostrar PDF
       try {
         const pdfResponse = await api.post(
           `/movements/receipt/${currentMember.value.id}`,
@@ -355,7 +349,7 @@ async function confirmAndSend() {
 }
 
 function cancelAndShowPDF() {
-  showEmailDialog.value = false // cerrar diálogo
+  showEmailDialog.value = false
 
   if (!currentMember.value || !pendingPaymentData) return
 
