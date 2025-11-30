@@ -297,7 +297,6 @@ const submitForm = async () => {
     await api.post('/lotteries', payload)
     $q.notify({ type: 'positive', message: 'Sorteig afegit correctament!' })
 
-    // Refresca la taula
     await refetch({
       params: {
         filter: {
@@ -308,7 +307,6 @@ const submitForm = async () => {
       },
     })
 
-    // Neteja formulari
     Object.keys(newLottery.value).forEach(
       (k) => (newLottery.value[k] = k === 'memberFk' ? null : 0),
     )
