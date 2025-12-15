@@ -1,20 +1,12 @@
 <template>
   <q-page padding>
     <div class="flex justify-center q-mb-md">
-      <q-select
+      <SpSelect
         v-model="selectedMember"
         :options="filteredMembers"
-        :option-label="(opt) => `${opt.name} ${opt.surname}`"
+        :option-label="(member) => `${member.name} ${member.surname}`"
         option-value="id"
         label="Membre"
-        emit-value
-        map-options
-        outlined
-        use-input
-        input-debounce="300"
-        clearable
-        prepend-inner-icon="search"
-        style="max-width: 300px; width: 100%"
         @filter="filterFn"
         @update:model-value="
           (val) => {
@@ -389,6 +381,7 @@ import { onMounted, ref, computed } from 'vue'
 import { api } from 'boot/axios'
 import { Notify } from 'quasar'
 import SpTable from 'src/components/SpTable.vue'
+import SpSelect from 'src/components/SpSelect.vue'
 
 const members = ref([])
 const filteredMembers = ref([])

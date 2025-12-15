@@ -1,42 +1,30 @@
 <template>
   <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md">
-    <q-select
+    <SpSelect
       v-model="selectedItem"
       :options="budgetItems"
       label="Partida pressupostària *"
       option-label="name"
       option-value="id"
-      emit-value
-      map-options
-      outlined
-      lazy-rules
       :rules="[
         (val) => (val !== null && val !== '') || 'La partida pressupostada es un camp obligatori',
       ]"
       @update:model-value="onBudgetItemSelected"
     />
-    <q-select
+    <SpSelect
       v-model.number="selectedSubItem"
       :options="subItems"
       label="Subpartida *"
       option-label="name"
       option-value="id"
-      emit-value
-      map-options
-      outlined
-      lazy-rules
       :rules="[(val) => (val !== null && val !== '') || 'La subpartida es un camp obligatori']"
     />
-    <q-select
+    <SpSelect
       v-model.number="selectedSupplier"
       :options="suppliers"
       label="Proveïdor *"
       option-label="name"
       option-value="id"
-      emit-value
-      map-options
-      outlined
-      lazy-rules
       :rules="[(val) => (val !== null && val !== '') || 'El proveïdor es un camp obligatori']"
     />
     <q-input
@@ -47,11 +35,13 @@
       lazy-rules
       :rules="[(val) => (val !== null && val !== '') || 'La quantitat es un camp obligatori']"
     />
-    <q-select
+    <SpSelect
       v-model="selectedPayMethod"
       :options="payMethods"
       label="Mètode de pagament *"
-      outlined
+      :rules="[
+        (val) => (val !== null && val !== '') || 'El mètode de pagament es un camp obligatori',
+      ]"
     />
     <q-input v-model="ticketReference" label="Número de factura o tiquet" outlined />
     <q-input
@@ -104,6 +94,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { api } from 'boot/axios'
+import SpSelect from '../SpSelect.vue'
 
 const { buyToEdit } = defineProps({
   buyToEdit: {
