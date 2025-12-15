@@ -1,15 +1,12 @@
 <template>
   <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md">
-    <q-select
+    <SpSelect
       v-if="!directDebitToEdit"
       v-model="memberFk"
       :options="memberOptions"
       option-value="id"
       option-label="fullName"
-      emit-value
-      map-options
       label="Titular"
-      outlined
     />
     <q-input v-model="accountNumber" label="Número de compte (IBAN)" outlined />
     <q-input v-model.number="actualAmount" label="Quantitat a domiciliar" outlined type="number" />
@@ -24,6 +21,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { api } from 'boot/axios'
+import SpSelect from 'src/components/SpSelect.vue'
 
 const { directDebitToEdit } = defineProps({
   directDebitToEdit: {

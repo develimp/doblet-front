@@ -24,17 +24,12 @@
       </div>
 
       <div class="col-auto">
-        <q-select
+        <SpSelect
           v-model="selectedLotteryName"
           :options="lotteryNames"
           :option-label="(opt) => `${opt.description} ${opt.fallaYearFk}`"
           option-value="id"
           label="Sorteig"
-          emit-value
-          map-options
-          outlined
-          dense
-          style="min-width: 200px"
         />
       </div>
 
@@ -99,21 +94,14 @@
           </div>
 
           <div class="col-12 col-sm-3">
-            <q-select
+            <SpSelect
               v-model="newLottery.memberFk"
               :options="filteredMembers"
               option-label="fullName"
               option-value="id"
               label="Faller"
-              emit-value
-              map-options
-              outlined
               dense
-              use-input
-              input-debounce="200"
               @filter="filterMembers"
-              hide-dropdown-icon
-              clearable
             />
           </div>
 
@@ -197,6 +185,7 @@ import { api } from 'src/boot/axios'
 import SpTable from 'src/components/SpTable.vue'
 import { useFetch } from 'src/composables/useFetch'
 import { useQuasar } from 'quasar'
+import SpSelect from 'src/components/SpSelect.vue'
 
 const $q = useQuasar()
 

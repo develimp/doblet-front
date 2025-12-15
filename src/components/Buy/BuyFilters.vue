@@ -3,24 +3,11 @@
     <q-toolbar class="bg-grey-2 text-dark rounded-borders q-mb-md">
       <q-toolbar-title>Filtres</q-toolbar-title>
     </q-toolbar>
-    <q-select
-      v-model="modelSupplier"
-      :options="suppliers"
-      label="Proveïdor"
-      outlined
-      clearable
-      emit-value
-      map-options
-      class="q-mb-md"
-    />
-    <q-select
+    <SpSelect v-model="modelSupplier" :options="suppliers" label="Proveïdor" class="q-mb-md" />
+    <SpSelect
       v-model="modelPayMethod"
       :options="payMethods"
       label="Mètode de pagament"
-      outlined
-      clearable
-      emit-value
-      map-options
       class="q-mb-md"
     />
     <q-input v-model="dateRangeLabel" label="Període" outlined clearable class="q-mb-md" readonly>
@@ -44,6 +31,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { api } from 'boot/axios'
+import SpSelect from 'src/components/SpSelect.vue'
 
 const props = defineProps({
   supplier: [Number, String, null],
