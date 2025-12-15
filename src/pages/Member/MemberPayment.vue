@@ -109,7 +109,7 @@
                   color="primary"
                   unelevated
                   @click="submitPayments"
-                  :disable="!selectedMember || totalNewPayments <= 0"
+                  :disable="!selectedMember || !hasAnyPayment"
                 />
               </div>
             </div>
@@ -410,6 +410,10 @@ const fetchMembers = async () => {
     console.error('Error loading members:', error)
   }
 }
+
+const hasAnyPayment = computed(() => {
+  return rows.value.filter((r) => r.label !== 'Totals').some((r) => Number(r.newPayment) !== 0)
+})
 
 const updateNewPayment = (row, val) => {
   if (val == null || val === '') {
