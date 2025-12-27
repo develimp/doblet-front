@@ -3,11 +3,10 @@
     <div class="flex justify-center q-mb-md">
       <SpSelect
         v-model="selectedMember"
-        :options="filteredMembers"
+        :options="members"
         :option-label="(member) => `${member.name} ${member.surname}`"
         option-value="id"
         label="Membre"
-        @filter="filterFn"
         @update:model-value="
           (val) => {
             fetchBalance(val)
@@ -384,7 +383,6 @@ import SpTable from 'src/components/SpTable.vue'
 import SpSelect from 'src/components/SpSelect.vue'
 
 const members = ref([])
-const filteredMembers = ref([])
 const selectedMember = ref(null)
 const paymentMethod = ref('cash')
 
@@ -405,7 +403,6 @@ const fetchMembers = async () => {
       },
     })
     members.value = response.data
-    filteredMembers.value = response.data
   } catch (error) {
     console.error('Error loading members:', error)
   }
@@ -542,20 +539,6 @@ const fetchBalance = async (memberId) => {
   } catch (error) {
     console.error('Error loading balance:', error)
   }
-}
-
-const filterFn = (val, update) => {
-  if (val === '') {
-    update(() => {
-      filteredMembers.value = members.value
-    })
-    return
-  }
-
-  update(() => {
-    const needle = val.toLowerCase()
-    filteredMembers.value = members.value.filter((m) => m.surname.toLowerCase().includes(needle))
-  })
 }
 
 const familyRows = ref([
