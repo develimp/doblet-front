@@ -2,10 +2,10 @@
   <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md">
     <SpSelect
       v-if="!directDebitToEdit"
-      v-model="memberFk"
-      :options="memberOptions"
+      v-model="selectedMember"
+      :options="members"
       option-value="id"
-      option-label="fullName"
+      :option-label="(member) => `${member.name} ${member.surname}`"
       label="Titular"
     />
     <q-input v-model="accountNumber" label="Número de compte (IBAN)" outlined />
@@ -32,22 +32,24 @@ const { directDebitToEdit } = defineProps({
 
 const emit = defineEmits(['success'])
 
-const memberFk = ref(null)
-const memberOptions = ref([])
-
+const members = ref([])
+const selectedMember = ref(null)
 const accountNumber = ref(null)
 const actualAmount = ref(null)
 const notes = ref(null)
 
-const loadMembers = async () => {
+const fetchMembers = async () => {
   try {
-    const res = await api.get('/members')
-    memberOptions.value = res.data.map((m) => ({
-      id: m.id,
-      fullName: `${m.name} ${m.surname}`,
-    }))
-  } catch (err) {
-    console.error('Error loading members:', err)
+    const response = await api.get('/members', {
+      params: {
+        filter: {
+          order: ['surname ASC'],
+        },
+      },
+    })
+    members.value = response.data
+  } catch (error) {
+    console.error('Error loading members:', error)
   }
 }
 
@@ -56,7 +58,7 @@ const onSubmit = async () => {
     const payload = {}
 
     if (!directDebitToEdit) {
-      if (memberFk.value != null) payload.memberFk = memberFk.value
+      if (selectedMember.value != null) payload.selectedMember = selectedMember.value
     }
 
     if (accountNumber.value != null) payload.accountNumber = accountNumber.value
@@ -77,7 +79,7 @@ const onSubmit = async () => {
 }
 
 const onReset = () => {
-  memberFk.value = null
+  selectedMember.value = null
   accountNumber.value = null
   actualAmount.value = null
   notes.value = null
@@ -89,7 +91,7 @@ onMounted(() => {
     actualAmount.value = directDebitToEdit.actualAmount
     notes.value = directDebitToEdit.notes
   } else {
-    loadMembers()
+    fetchMembers()
   }
 })
 </script>

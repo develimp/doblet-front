@@ -3,13 +3,14 @@
     <q-toolbar class="bg-grey-2 text-dark rounded-borders q-mb-md">
       <q-toolbar-title>Filtres</q-toolbar-title>
     </q-toolbar>
-    <SpSelect v-model="modelSupplier" :options="suppliers" label="Proveïdor" class="q-mb-md" />
     <SpSelect
-      v-model="modelPayMethod"
-      :options="payMethods"
-      label="Mètode de pagament"
-      class="q-mb-md"
+      v-model="selectedSupplier"
+      :options="suppliers"
+      option-label="name"
+      option-value="id"
+      label="Proveïdor"
     />
+    <SpSelect v-model="selectedPayMethod" :options="payMethods" label="Mètode de pagament" />
     <q-input v-model="dateRangeLabel" label="Període" outlined clearable class="q-mb-md" readonly>
       <template v-slot:append>
         <q-icon name="event" class="cursor-pointer">
@@ -46,8 +47,8 @@ const emit = defineEmits([
   'update:buyedTo',
 ])
 
-const modelSupplier = ref(props.supplier)
-const modelPayMethod = ref(props.payMethod)
+const selectedSupplier = ref(props.supplier)
+const selectedPayMethod = ref(props.payMethod)
 const modelDateRange = ref(
   props.buyedFrom && props.buyedTo ? { from: props.buyedFrom, to: props.buyedTo } : null,
 )
@@ -55,8 +56,8 @@ const dateRangeLabel = ref(
   props.buyedFrom && props.buyedTo ? `${props.buyedFrom} → ${props.buyedTo}` : '',
 )
 
-watch(modelSupplier, (val) => emit('update:supplier', val))
-watch(modelPayMethod, (val) => emit('update:payMethod', val))
+watch(selectedSupplier, (val) => emit('update:supplier', val))
+watch(selectedPayMethod, (val) => emit('update:payMethod', val))
 
 const emitDateRange = (val) => {
   if (typeof val === 'string') {
@@ -85,7 +86,7 @@ const fetchSuppliers = async () => {
     const res = await api.get('/suppliers', {
       params: { filter: { order: ['name ASC'] } },
     })
-    suppliers.value = res.data.map((s) => ({ label: s.name, value: s.id }))
+    suppliers.value = res.data
   } catch (err) {
     console.error('Error cargando proveedores:', err)
   }
@@ -93,8 +94,8 @@ const fetchSuppliers = async () => {
 fetchSuppliers()
 
 const clearFilters = () => {
-  modelSupplier.value = null
-  modelPayMethod.value = null
+  selectedSupplier.value = null
+  selectedPayMethod.value = null
   modelDateRange.value = null
   dateRangeLabel.value = ''
   emit('update:buyedFrom', null)

@@ -27,7 +27,7 @@
         <SpSelect
           v-model="selectedLotteryName"
           :options="lotteryNames"
-          :option-label="(opt) => `${opt.description} ${opt.fallaYearFk}`"
+          :option-label="(lotteryName) => `${lotteryName.description} ${lotteryName.fallaYearFk}`"
           option-value="id"
           label="Sorteig"
         />
@@ -96,12 +96,10 @@
           <div class="col-12 col-sm-3">
             <SpSelect
               v-model="newLottery.memberFk"
-              :options="filteredMembers"
-              option-label="fullName"
+              :options="members"
+              :option-label="(member) => `${member.name} ${member.surname}`"
               option-value="id"
               label="Faller"
-              dense
-              @filter="filterMembers"
             />
           </div>
 
@@ -241,39 +239,21 @@ const newLottery = ref({
   tenthsChildish: 0,
 })
 
-const allMembers = ref([])
-const filteredMembers = ref([])
+const members = ref([])
 
 const fetchMembers = async () => {
   try {
     const response = await api.get('/members', {
-      params: { filter: { order: ['surname ASC'] } },
+      params: {
+        filter: {
+          order: ['surname ASC'],
+        },
+      },
     })
-    allMembers.value = response.data.map((m) => ({
-      id: m.id,
-      fullName: `${m.name} ${m.surname}`,
-      surname: m.surname.toLowerCase(),
-    }))
-    filteredMembers.value = allMembers.value
-  } catch (err) {
-    console.error('Error carregant membres:', err)
+    members.value = response.data
+  } catch (error) {
+    console.error('Error loading members:', error)
   }
-}
-
-const filterMembers = (val, update) => {
-  if (val === '') {
-    update(() => {
-      filteredMembers.value = allMembers.value
-    })
-    return
-  }
-
-  update(() => {
-    const needle = val.toLowerCase()
-    filteredMembers.value = allMembers.value.filter(
-      (m) => m.surname.includes(needle) || m.fullName.toLowerCase().includes(needle),
-    )
-  })
 }
 
 const submitForm = async () => {
