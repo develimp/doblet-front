@@ -26,7 +26,8 @@
       <div class="col-auto">
         <SpSelect
           v-model="selectedLotteryName"
-          :options="lotteryNames"
+          :options="dataLotteryNames"
+          :loading="loadingLotteryNames"
           :option-label="(lotteryName) => `${lotteryName.description} ${lotteryName.fallaYearFk}`"
           option-value="id"
           label="Sorteig"
@@ -45,27 +46,27 @@
       </div>
     </div>
 
-    <div v-if="loading" class="row justify-center q-my-md">
+    <div v-if="loadingLotteries" class="row justify-center q-my-md">
       <q-spinner-dots size="40px" color="primary" />
     </div>
-    <div v-else-if="error">
+    <div v-else-if="errorLotteries">
       <q-banner class="bg-red text-white">
-        Error carregant sortejos: {{ error.message }}
-        <q-btn flat color="white" label="Reintentar" @click="refetch()" />
+        Error carregant sortejos: {{ errorLotteries.message }}
+        <q-btn flat color="white" label="Reintentar" @click="lotteriesRefetch()" />
       </q-banner>
     </div>
-    <div v-else-if="data.value?.length === 0">No s'han trobat sortejos.</div>
+    <div v-else-if="dataLotteries?.length === 0">No s'han trobat sortejos.</div>
     <SpTable
       v-else
-      :rows="data || []"
+      :rows="dataLotteries || []"
       :columns="columns"
       row-key="id"
       class="q-mt-md table-header-bg"
-      :loading="loading"
+      :loading="loadingLotteries"
       v-model:pagination="pagination"
     >
     </SpTable>
-    <div v-if="Array.isArray(data) && data.length" class="q-mt-md totals-summary">
+    <div v-if="Array.isArray(dataLotteries) && dataLotteries.length" class="q-mt-md totals-summary">
       <div>Pap. masc.: {{ totals.ticketsMale }}</div>
       <div>Pap. fem.: {{ totals.ticketsFemale }}</div>
       <div>Pap. inf.: {{ totals.ticketsChildish }}</div>
@@ -96,8 +97,9 @@
           <div class="col-12 col-sm-3">
             <SpSelect
               v-model="newLottery.memberFk"
-              :options="members"
-              :option-label="(member) => `${member.name} ${member.surname}`"
+              :options="dataMembers"
+              :loading="loadingMembers"
+              :option-label="(member) => (member ? `${member.name} ${member.surname}` : '')"
               option-value="id"
               label="Faller"
             />
@@ -178,7 +180,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { api } from 'src/boot/axios'
 import SpTable from 'src/components/SpTable.vue'
 import { useFetch } from 'src/composables/useFetch'
@@ -187,7 +189,37 @@ import SpSelect from 'src/components/SpSelect.vue'
 
 const $q = useQuasar()
 
-const { data, loading, error, refetch } = useFetch('/lotteries', {
+const {
+  data: dataLotteries,
+  loading: loadingLotteries,
+  error: errorLotteries,
+  refetch: lotteriesRefetch,
+} = useFetch('/lotteries', {
+  params: {
+    filter: {
+      order: ['id DESC'],
+    },
+  },
+})
+
+const {
+  data: dataMembers,
+  loading: loadingMembers,
+  error: errorMembers,
+} = useFetch('/members', {
+  params: {
+    filter: {
+      order: ['surname ASC'],
+    },
+  },
+})
+
+const {
+  data: dataLotteryNames,
+  loading: loadingLotteryNames,
+  error: errorLotteryNames,
+  refetch: lotteryNamesRefetch,
+} = useFetch('/lottery-names', {
   params: {
     filter: {
       order: ['id DESC'],
@@ -200,33 +232,7 @@ const pagination = ref({
   rowsPerPage: 15,
 })
 
-const lotteryNames = ref([])
 const selectedLotteryName = ref(null)
-
-const fetchLotteryNames = async () => {
-  try {
-    const response = await api.get('/lottery-names', {
-      params: { filter: { order: ['id DESC'] } },
-    })
-    lotteryNames.value = response.data
-
-    if (response.data.length > 0) {
-      selectedLotteryName.value = response.data[0].id
-
-      await refetch({
-        params: {
-          filter: {
-            where: { lotteryNameFk: selectedLotteryName.value },
-            include: [{ relation: 'member' }],
-            order: ['lotteryId DESC'],
-          },
-        },
-      })
-    }
-  } catch (error) {
-    console.error('Error loading lottery names:', error)
-  }
-}
 
 const newLottery = ref({
   lotteryId: null,
@@ -239,23 +245,6 @@ const newLottery = ref({
   tenthsChildish: 0,
 })
 
-const members = ref([])
-
-const fetchMembers = async () => {
-  try {
-    const response = await api.get('/members', {
-      params: {
-        filter: {
-          order: ['surname ASC'],
-        },
-      },
-    })
-    members.value = response.data
-  } catch (error) {
-    console.error('Error loading members:', error)
-  }
-}
-
 const submitForm = async () => {
   try {
     const payload = {
@@ -266,7 +255,7 @@ const submitForm = async () => {
     await api.post('/lotteries', payload)
     $q.notify({ type: 'positive', message: 'Sorteig afegit correctament!' })
 
-    await refetch({
+    await lotteriesRefetch({
       params: {
         filter: {
           where: { lotteryNameFk: selectedLotteryName.value },
@@ -285,9 +274,27 @@ const submitForm = async () => {
   }
 }
 
+watch(errorMembers, (err) => {
+  if (err) {
+    $q.notify({
+      type: 'negative',
+      message: 'Error carregant la llista de fallers',
+      caption: err.message,
+    })
+  }
+})
+
+watch(dataLotteryNames, async (list) => {
+  if (!Array.isArray(list) || list.length === 0) return
+
+  if (!selectedLotteryName.value) {
+    selectedLotteryName.value = list[0].id
+  }
+})
+
 watch(selectedLotteryName, async (newVal) => {
   if (!newVal) return
-  await refetch({
+  await lotteriesRefetch({
     params: {
       filter: {
         where: { lotteryNameFk: newVal },
@@ -296,6 +303,16 @@ watch(selectedLotteryName, async (newVal) => {
       },
     },
   })
+})
+
+watch(errorLotteryNames, (err) => {
+  if (err) {
+    $q.notify({
+      type: 'negative',
+      message: 'Error carregant els sortejos',
+      caption: err.message,
+    })
+  }
 })
 
 const newLotteryName = ref('')
@@ -313,7 +330,7 @@ const createLotteryName = async () => {
     $q.notify({ type: 'positive', message: 'Sorteig creat correctament!' })
     newLotteryName.value = ''
 
-    await fetchLotteryNames()
+    await lotteryNamesRefetch()
     selectedLotteryName.value = response.data.id
   } catch {
     $q.notify({ type: 'negative', message: 'Error creant nou sorteig' })
@@ -333,7 +350,7 @@ const assignLottery = async () => {
       await api.post(`/lottery-names/${selectedLotteryName.value}/assign`)
       $q.notify({ type: 'positive', message: 'Loteria assignada correctament!' })
 
-      await refetch({
+      await lotteriesRefetch({
         params: {
           filter: {
             where: { lotteryNameFk: selectedLotteryName.value },
@@ -347,10 +364,6 @@ const assignLottery = async () => {
     }
   })
 }
-
-onMounted(async () => {
-  await Promise.all([fetchLotteryNames(), fetchMembers()])
-})
 
 const columns = [
   {
@@ -440,7 +453,7 @@ const columns = [
 ]
 
 const totals = computed(() => {
-  return (data.value || []).reduce(
+  return (dataLotteries.value || []).reduce(
     (acc, row) => {
       acc.ticketsMale += row.ticketsMale || 0
       acc.ticketsFemale += row.ticketsFemale || 0

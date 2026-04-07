@@ -23,7 +23,6 @@
       class="q-mt-md table-header-bg"
       :loading="loading"
       v-model:pagination="pagination"
-      @request="onRequest"
     >
       <template v-slot:body-cell-actions="props">
         <q-td :props="props">
@@ -75,7 +74,13 @@ import { useFetch } from 'src/composables/useFetch'
 import { useDateFormat } from 'src/composables/useDateFormat'
 import { useCrudDialog } from 'src/composables/useCrudDialog'
 
-const { data, loading, error, refetch } = useFetch('/sales')
+const { data, loading, error, refetch } = useFetch('/sales', {
+  params: {
+    filter: {
+      order: ['sold DESC'],
+    },
+  },
+})
 
 const { formatDate } = useDateFormat()
 
@@ -96,19 +101,6 @@ const pagination = ref({
   page: 1,
   rowsPerPage: 15,
 })
-
-const onRequest = async ({ pagination: p }) => {
-  const { sortBy, descending, page, rowsPerPage } = p
-  await refetch({
-    params: {
-      filter: {
-        order: [`${sortBy} ${descending ? 'DESC' : 'ASC'}`],
-        limit: rowsPerPage,
-        skip: (page - 1) * rowsPerPage,
-      },
-    },
-  })
-}
 
 const columns = [
   {
