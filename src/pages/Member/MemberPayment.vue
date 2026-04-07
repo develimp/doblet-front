@@ -4,13 +4,13 @@
       <SpSelect
         v-model="selectedMember"
         :options="members"
-        :option-label="(member) => `${member.name} ${member.surname}`"
+        :loading="loadingMembers"
+        :option-label="memberLabel"
         option-value="id"
         label="Membre"
         @update:model-value="
           (val) => {
             fetchBalance(val)
-            fetchMovements(val)
             fetchFamilyBalance(val)
             fetchFamilyMovements(val)
           }
@@ -284,7 +284,7 @@
               </q-banner>
             </div>
 
-            <div v-else-if="movements.length === 0" class="q-pa-md">
+            <div v-else-if="!movements || movements.length === 0" class="q-pa-md">
               No s'han trobat moviments per aquest membre.
             </div>
 
@@ -376,15 +376,32 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { api } from 'boot/axios'
 import { Notify } from 'quasar'
 import SpTable from 'src/components/SpTable.vue'
 import SpSelect from 'src/components/SpSelect.vue'
+import { useFetch } from 'src/composables/useFetch'
 
-const members = ref([])
 const selectedMember = ref(null)
 const paymentMethod = ref('cash')
+
+const {
+  data: members,
+  loading: loadingMembers,
+  error: errorMembers,
+} = useFetch('/members', {
+  params: {
+    filter: {
+      order: ['surname ASC'],
+    },
+  },
+})
+
+const memberLabel = (member) => {
+  if (!member) return ''
+  return `${member.name} ${member.surname}`
+}
 
 const rows = ref([
   { label: 'Quota', assigned: 0, payed: 0, diff: 0, newPayment: 0, newPaymentDisplay: '0.00' },
@@ -392,21 +409,6 @@ const rows = ref([
   { label: 'Rifa', assigned: 0, payed: 0, diff: 0, newPayment: 0, newPaymentDisplay: '0.00' },
   { label: 'Totals', assigned: 0, payed: 0, diff: 0, newPayment: 0, newPaymentDisplay: '0.00' },
 ])
-
-const fetchMembers = async () => {
-  try {
-    const response = await api.get('/members', {
-      params: {
-        filter: {
-          order: ['surname ASC'],
-        },
-      },
-    })
-    members.value = response.data
-  } catch (error) {
-    console.error('Error loading members:', error)
-  }
-}
 
 const hasAnyPayment = computed(() => {
   return rows.value.filter((r) => r.label !== 'Totals').some((r) => Number(r.newPayment) !== 0)
@@ -853,7 +855,6 @@ const submitAssignment = async () => {
     Notify.create({ type: 'positive', message: 'Assignació guardada correctament' })
 
     await fetchBalance(selectedMember.value)
-    await fetchMovements(selectedMember.value)
 
     assignmentAmount.value = null
   } catch (err) {
@@ -862,27 +863,12 @@ const submitAssignment = async () => {
   }
 }
 
-const movements = ref([])
-const loading = ref(false)
-const error = ref(null)
-
-const fetchMovements = async (memberId) => {
-  if (!memberId) {
-    movements.value = []
-    return
-  }
-  loading.value = true
-  error.value = null
-  try {
-    const res = await api.get(`/movements/by-member/${memberId}/current`)
-    movements.value = res.data
-  } catch (err) {
-    error.value = err
-    console.error('Error carregant moviments:', err)
-  } finally {
-    loading.value = false
-  }
-}
+const {
+  data: movements,
+  loading,
+  error,
+  refetch: refetchMovements,
+} = useFetch('', { immediate: false })
 
 const familyMovements = ref([])
 const loadingFamilyMovements = ref(false)
@@ -968,7 +954,34 @@ const columns = [
   },
 ]
 
-onMounted(async () => {
-  await Promise.all([fetchMembers()])
+watch(errorMembers, (err) => {
+  if (err) {
+    Notify.create({
+      type: 'negative',
+      message: 'Error carregant membres',
+      caption: err.message,
+    })
+  }
+})
+
+watch(selectedMember, (val) => {
+  if (!val) {
+    movements.value = []
+    return
+  }
+
+  refetchMovements({
+    url: `/movements/by-member/${val}/current`,
+  })
+})
+
+watch(error, (err) => {
+  if (err) {
+    Notify.create({
+      type: 'negative',
+      message: 'Error carregant moviments',
+      caption: err.message,
+    })
+  }
 })
 </script>
