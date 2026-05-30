@@ -14,6 +14,13 @@
       class="q-mr-sm"
       @click="downloadAuthorizationPdf"
     />
+    <q-btn
+      label="Document d'adhesió de les parelles"
+      color="secondary"
+      icon="picture_as_pdf"
+      class="q-mr-sm"
+      @click="downloadPartnerPdf"
+    />
   </q-page>
 </template>
 
@@ -37,6 +44,20 @@ const downloadAdherencePdf = async () => {
 const downloadAuthorizationPdf = async () => {
   try {
     const response = await api.get('/members/authorization-pdf', {
+      responseType: 'blob',
+    })
+
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+
+    window.open(url)
+  } catch (error) {
+    console.error('Error descargando PDF:', error)
+  }
+}
+
+const downloadPartnerPdf = async () => {
+  try {
+    const response = await api.get('/members/partner-pdf', {
       responseType: 'blob',
     })
 
