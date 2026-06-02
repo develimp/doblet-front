@@ -1,3 +1,109 @@
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import EssentialLink from 'components/EssentialLink.vue'
+import { api } from 'src/boot/axios'
+import { rightDrawerContent } from 'src/composables/useRightDrawer'
+
+const router = useRouter()
+
+const linksList = [
+  {
+    title: 'Inici',
+    caption: 'Pàgina principal',
+    icon: 'home',
+    link: '/',
+  },
+  {
+    title: 'Fallers',
+    caption: 'Pagament dels fallers',
+    icon: 'groups',
+    link: '/member/payment',
+  },
+  {
+    title: 'Loteria',
+    caption: 'Gestió de la loteria',
+    icon: 'confirmation_number',
+    link: '/lottery/list',
+  },
+  {
+    title: 'Domiciliacions',
+    caption: 'Gestió de domiciliacions',
+    icon: 'account_balance',
+    link: '/directDebit/list',
+  },
+  {
+    title: 'Categories',
+    caption: 'Categories dels fallers',
+    icon: 'category',
+    link: '/category/list',
+  },
+  {
+    title: 'Compres',
+    caption: 'Compres efectuades',
+    icon: 'shopping_cart',
+    link: '/buy/list',
+  },
+  {
+    title: 'Vendes',
+    caption: 'Vendes efectuades',
+    icon: 'point_of_sale',
+    link: '/sale/list',
+  },
+  {
+    title: 'Proveïdors',
+    caption: 'Proveïdors',
+    icon: 'local_shipping',
+    link: '/supplier/list',
+  },
+  {
+    title: 'Clients',
+    caption: 'Clients',
+    icon: 'contacts',
+    link: '/client/list',
+  },
+  {
+    title: 'Grafana',
+    caption: 'grafana.santspatrons.com',
+    icon: 'bar_chart',
+    link: 'https://grafana.santspatrons.com',
+  },
+]
+
+const leftDrawerOpen = ref(false)
+const rightDrawerOpen = ref(true)
+const user = ref(null)
+
+function toggleLeftDrawer() {
+  leftDrawerOpen.value = !leftDrawerOpen.value
+}
+function toggleRightDrawer() {
+  rightDrawerOpen.value = !rightDrawerOpen.value
+}
+
+function handleLogout() {
+  localStorage.removeItem('token')
+  router.replace('/login')
+}
+
+onMounted(async () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    router.replace('/login')
+    return
+  }
+
+  try {
+    const res = await api.get('/whoami', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    user.value = res.data
+  } catch (err) {
+    console.error('Error cargando usuario', err)
+    handleLogout()
+  }
+})
+</script>
 <template>
   <q-layout view="hHh lpR fFf">
     <q-header elevated class="bg-primary text-white">
@@ -50,116 +156,3 @@
     </q-page-container>
   </q-layout>
 </template>
-
-<script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import EssentialLink from 'components/EssentialLink.vue'
-import { api } from 'src/boot/axios'
-import { rightDrawerContent } from 'src/composables/useRightDrawer'
-
-const router = useRouter()
-
-const linksList = [
-  {
-    title: 'Inici',
-    caption: 'Pàgina principal',
-    icon: 'home',
-    link: '/',
-  },
-  {
-    title: 'Fallers',
-    caption: 'Pagament dels fallers',
-    icon: 'people_alt',
-    link: '/member/payment',
-  },
-  {
-    title: 'Loteria',
-    caption: 'Gestió de la loteria',
-    icon: 'celebration',
-    link: '/lottery/list',
-  },
-  {
-    title: 'Domiciliacions',
-    caption: 'Gestió de domiciliacions',
-    icon: 'credit_card',
-    link: '/directDebit/list',
-  },
-  {
-    title: 'Categories',
-    caption: 'Categories dels fallers',
-    icon: 'category',
-    link: '/category/list',
-  },
-  {
-    title: 'Compres',
-    caption: 'Compres efectuades',
-    icon: 'shopping_cart',
-    link: '/buy/list',
-  },
-  {
-    title: 'Vendes',
-    caption: 'Vendes efectuades',
-    icon: 'local_mall',
-    link: '/sale/list',
-  },
-  {
-    title: 'Proveïdors',
-    caption: 'Proveïdors',
-    icon: 'local_shipping',
-    link: '/supplier/list',
-  },
-  {
-    title: 'Clients',
-    caption: 'Clients',
-    icon: 'people',
-    link: '/client/list',
-  },
-  {
-    title: 'Grafana',
-    caption: 'grafana.santspatrons.com',
-    icon: 'analytics',
-    link: 'https://grafana.santspatrons.com',
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/develimp',
-    icon: 'code',
-    link: 'https://github.com/develimp',
-  },
-]
-
-const leftDrawerOpen = ref(false)
-const rightDrawerOpen = ref(true)
-const user = ref(null)
-
-function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value
-}
-function toggleRightDrawer() {
-  rightDrawerOpen.value = !rightDrawerOpen.value
-}
-
-function handleLogout() {
-  localStorage.removeItem('token')
-  router.replace('/login')
-}
-
-onMounted(async () => {
-  const token = localStorage.getItem('token')
-  if (!token) {
-    router.replace('/login')
-    return
-  }
-
-  try {
-    const res = await api.get('/whoami', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    user.value = res.data
-  } catch (err) {
-    console.error('Error cargando usuario', err)
-    handleLogout()
-  }
-})
-</script>
