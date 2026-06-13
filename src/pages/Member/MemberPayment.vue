@@ -1,380 +1,3 @@
-<template>
-  <q-page padding>
-    <div class="flex justify-center q-mb-md">
-      <SpSelect
-        v-model="selectedMember"
-        :options="members"
-        :loading="loadingMembers"
-        :option-label="memberLabel"
-        option-value="id"
-        label="Membre"
-        @update:model-value="
-          (val) => {
-            fetchBalance(val)
-            fetchFamilyBalance(val)
-            fetchFamilyMovements(val)
-          }
-        "
-      />
-    </div>
-
-    <div class="row q-col-gutter-lg">
-      <div class="col-6">
-        <div class="q-pa-md">
-          <q-card flat bordered>
-            <q-card-section class="text-orange text-bold"> Pagar </q-card-section>
-
-            <q-separator />
-
-            <div class="q-pa-md">
-              <div class="row q-col-gutter-sm text-bold">
-                <div class="col"></div>
-                <div class="col text-center">Assignat</div>
-                <div class="col text-center">Pagat</div>
-                <div class="col text-center">Diferència</div>
-                <div class="col text-center">Nou pagament</div>
-              </div>
-
-              <div
-                v-for="row in rows"
-                :key="row.label"
-                class="row q-col-gutter-sm items-center q-mt-sm"
-              >
-                <div class="col" :class="row.label === 'Totals' ? 'text-bold' : ''">
-                  {{ row.label }}
-                </div>
-                <div class="col text-center">
-                  <q-input
-                    :model-value="formatCurrency(row.assigned)"
-                    dense
-                    outlined
-                    readonly
-                    tabindex="-1"
-                  />
-                </div>
-                <div class="col text-center">
-                  <q-input
-                    :model-value="formatCurrency(row.payed)"
-                    dense
-                    outlined
-                    readonly
-                    tabindex="-1"
-                  />
-                </div>
-                <div class="col text-center">
-                  <q-input
-                    :model-value="formatCurrency(row.diff)"
-                    dense
-                    outlined
-                    readonly
-                    tabindex="-1"
-                  />
-                </div>
-                <div class="col text-center">
-                  <q-input
-                    v-if="row.label !== 'Totals'"
-                    :model-value="row.newPaymentDisplay"
-                    @update:model-value="(val) => updateNewPayment(row, val)"
-                    @blur="() => formatTwoDecimals(row)"
-                    @focus="(e) => e.target.select()"
-                    type="text"
-                    inputmode="decimal"
-                    dense
-                    outlined
-                    suffix="€"
-                  />
-                  <q-input
-                    v-else
-                    :model-value="formatCurrency(totalNewPayments)"
-                    dense
-                    outlined
-                    readonly
-                    tabindex="-1"
-                  />
-                </div>
-              </div>
-              <div class="flex items-center justify-center q-mt-lg q-gutter-md">
-                <q-option-group
-                  v-model="paymentMethod"
-                  :options="[
-                    { label: 'Efectiu', value: 'cash' },
-                    { label: 'Banc', value: 'bank' },
-                  ]"
-                  type="radio"
-                  inline
-                />
-                <q-btn
-                  label="PAGAR"
-                  color="primary"
-                  unelevated
-                  @click="submitPayments"
-                  :disable="!selectedMember || !hasAnyPayment"
-                />
-              </div>
-            </div>
-          </q-card>
-        </div>
-
-        <div class="q-mt-lg q-pa-md">
-          <q-card flat bordered>
-            <q-card-section class="text-orange text-bold">Assignar</q-card-section>
-            <q-separator />
-
-            <div class="q-pa-md">
-              <div class="row items-center q-gutter-md">
-                <div class="col-auto">
-                  <q-option-group
-                    v-model="assignmentConcept"
-                    :options="[
-                      { label: 'Quota', value: 1 },
-                      { label: 'Rifa', value: 3 },
-                    ]"
-                    type="radio"
-                    inline
-                  />
-                </div>
-
-                <div class="col">
-                  <q-input
-                    v-model.number="assignmentAmount"
-                    label="Import"
-                    suffix="€"
-                    type="number"
-                    dense
-                    outlined
-                    min="0"
-                  />
-                </div>
-
-                <div class="col-auto">
-                  <q-btn
-                    label="Assignar"
-                    color="primary"
-                    unelevated
-                    @click="submitAssignment"
-                    :disable="!selectedMember || !assignmentAmount || assignmentAmount <= 0"
-                  />
-                </div>
-              </div>
-            </div>
-          </q-card>
-        </div>
-
-        <div class="q-mt-lg q-pa-md">
-          <q-card flat bordered>
-            <q-card-section class="text-orange text-bold">Pagar per familia</q-card-section>
-            <q-separator />
-
-            <div class="q-pa-md">
-              <div class="row q-col-gutter-sm text-bold">
-                <div class="col"></div>
-                <div class="col text-center">Assignat</div>
-                <div class="col text-center">Pagat</div>
-                <div class="col text-center">Diferència</div>
-                <div class="col text-center">Nou pagament</div>
-              </div>
-
-              <div
-                v-for="row in [
-                  ...familyRows,
-                  {
-                    label: 'Totals',
-                    ...familyTotals,
-                    newPaymentDisplay: formatCurrency(totalFamilyNewPayments),
-                  },
-                ]"
-                :key="row.label"
-                class="row q-col-gutter-sm items-center q-mt-sm"
-              >
-                <div class="col" :class="row.label === 'Totals' ? 'text-bold' : ''">
-                  {{ row.label }}
-                </div>
-                <div class="col text-center">
-                  <q-input
-                    :model-value="formatCurrency(row.assigned)"
-                    dense
-                    outlined
-                    readonly
-                    tabindex="-1"
-                  />
-                </div>
-                <div class="col text-center">
-                  <q-input
-                    :model-value="formatCurrency(row.payed)"
-                    dense
-                    outlined
-                    readonly
-                    tabindex="-1"
-                  />
-                </div>
-                <div class="col text-center">
-                  <q-input
-                    :model-value="formatCurrency(row.diff)"
-                    dense
-                    outlined
-                    readonly
-                    tabindex="-1"
-                  />
-                </div>
-                <div class="col text-center" v-if="row.label !== 'Totals'">
-                  <q-input
-                    :model-value="row.newPaymentDisplay"
-                    @update:model-value="(val) => updateFamilyNewPayment(row, val)"
-                    @blur="() => formatTwoDecimals(row, 'family')"
-                    @focus="(e) => e.target.select()"
-                    type="text"
-                    inputmode="decimal"
-                    dense
-                    outlined
-                    suffix="€"
-                  />
-                </div>
-                <div class="col text-center" v-else>
-                  <q-input
-                    :model-value="formatCurrency(totalFamilyNewPayments)"
-                    dense
-                    outlined
-                    readonly
-                    tabindex="-1"
-                  />
-                </div>
-              </div>
-              <div class="flex items-center justify-center q-mt-lg q-gutter-md">
-                <q-option-group
-                  v-model="familyPaymentMethod"
-                  :options="[
-                    { label: 'Efectiu', value: 'cash' },
-                    { label: 'Banc', value: 'bank' },
-                  ]"
-                  type="radio"
-                  inline
-                />
-                <q-btn
-                  label="PAGAR FAMÍLIA"
-                  color="primary"
-                  unelevated
-                  @click="submitFamilyPayments"
-                  :disable="totalFamilyNewPayments <= 0"
-                />
-              </div>
-            </div>
-          </q-card>
-        </div>
-      </div>
-
-      <div class="col-6">
-        <div class="q-pa-md">
-          <q-card flat bordered>
-            <q-card-section class="text-orange text-bold"> Moviments realitzats </q-card-section>
-            <q-separator />
-
-            <div v-if="loading" class="row justify-center q-my-md">
-              <q-spinner-dots size="40px" color="primary" />
-            </div>
-
-            <div v-else-if="error">
-              <q-banner class="bg-red text-white">
-                Error carregant moviments: {{ error.message }}
-                <q-btn
-                  flat
-                  color="white"
-                  label="Reintentar"
-                  @click="fetchMovements(selectedMember)"
-                />
-              </q-banner>
-            </div>
-
-            <div v-else-if="!movements || movements.length === 0" class="q-pa-md">
-              No s'han trobat moviments per aquest membre.
-            </div>
-
-            <SpTable
-              v-else
-              :rows="movements"
-              :columns="columns"
-              row-key="id"
-              class="q-mt-md table-header-bg"
-              :loading="loading"
-              v-model:pagination="pagination"
-            />
-          </q-card>
-        </div>
-
-        <div class="q-pa-md">
-          <q-card flat bordered>
-            <q-card-section class="text-orange text-bold"> Moviments família </q-card-section>
-            <q-separator />
-
-            <div v-if="loadingFamilyMovements" class="row justify-center q-my-md">
-              <q-spinner-dots size="40px" color="primary" />
-            </div>
-
-            <div v-else-if="familyMovements.length === 0" class="q-pa-md">
-              No s'han trobat moviments per la família.
-            </div>
-
-            <SpTable
-              v-else
-              :rows="familyMovements"
-              :loading="loadingFamilyMovements"
-              row-key="id"
-              class="q-mt-md table-header-bg"
-              v-model:pagination="pagination"
-              :columns="columns"
-            >
-              <template v-slot:body-cell-date="props">
-                <q-td>
-                  {{ new Date(props.row.date).toLocaleDateString() }}
-                </q-td>
-              </template>
-
-              <template v-slot:body-cell-type="props">
-                <q-td>
-                  {{ props.row.type === 1 ? 'Assignació' : 'Pagament' }}
-                </q-td>
-              </template>
-
-              <template v-slot:body-cell-concept="props">
-                <q-td>
-                  {{
-                    props.row.concept === 1 ? 'Quota' : props.row.concept === 3 ? 'Rifa' : 'Loteria'
-                  }}
-                </q-td>
-              </template>
-
-              <template v-slot:body-cell-amount="props">
-                <q-td class="text-right"> {{ formatCurrency(props.row.amount) }} </q-td>
-              </template>
-            </SpTable>
-          </q-card>
-        </div>
-      </div>
-    </div>
-
-    <q-dialog v-model="showEmailDialog" persistent>
-      <q-card style="min-width: 400px">
-        <q-card-section>
-          <div class="text-h6">Confirmar correu</div>
-          <div class="text-subtitle2 q-mt-sm">Introdueix o confirma el correu del membre:</div>
-          <q-input
-            v-model="memberEmail"
-            label="Correu electrònic"
-            type="email"
-            dense
-            autofocus
-            :rules="[(val) => !!val || 'El correu és obligatori']"
-          />
-        </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn flat label="Cancelar" color="negative" @click="cancelAndShowPDF" />
-          <q-btn label="Acceptar" color="primary" :loading="sending" @click="confirmAndSend" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-  </q-page>
-</template>
-
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { api } from 'boot/axios'
@@ -385,6 +8,9 @@ import { useFetch } from 'src/composables/useFetch'
 
 const selectedMember = ref(null)
 const paymentMethod = ref('cash')
+const isAuthorizationSigned = ref(false)
+const showAuthorizationCheckbox = ref(false)
+const showFamilyAuthorizationWarning = ref(false)
 
 const {
   data: members,
@@ -401,6 +27,48 @@ const {
 const memberLabel = (member) => {
   if (!member) return ''
   return `${member.name} ${member.surname}`
+}
+
+const getAge = (birthdate) => {
+  const today = new Date()
+  const birthDate = new Date(birthdate)
+
+  let age = today.getFullYear() - birthDate.getFullYear()
+
+  const hasHadBirthdayThisYear =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() >= birthDate.getDate())
+
+  if (!hasHadBirthdayThisYear) {
+    age--
+  }
+
+  return age
+}
+
+const checkFamilyAuthorization = (memberId) => {
+  showFamilyAuthorizationWarning.value = false
+
+  if (!memberId || !members.value?.length) {
+    return
+  }
+
+  const selected = members.value.find((m) => m.id === memberId)
+
+  if (!selected?.familyFk) {
+    return
+  }
+
+  const hasMinorWithoutAuthorization = members.value.some((member) => {
+    return (
+      member.familyFk === selected.familyFk &&
+      getAge(member.birthdate) < 18 &&
+      !member.isAuthorizationSigned
+    )
+  })
+
+  showFamilyAuthorizationWarning.value = hasMinorWithoutAuthorization
 }
 
 const rows = ref([
@@ -540,6 +208,75 @@ const fetchBalance = async (memberId) => {
     ]
   } catch (error) {
     console.error('Error loading balance:', error)
+  }
+}
+
+const fetchAuthorization = async (memberId) => {
+  if (!memberId) {
+    isAuthorizationSigned.value = false
+    showAuthorizationCheckbox.value = false
+    return
+  }
+
+  try {
+    const response = await api.get(`/members/${memberId}`)
+    const member = response.data
+
+    isAuthorizationSigned.value = !!member.isAuthorizationSigned
+
+    const today = new Date()
+    const birthdate = new Date(member.birthdate)
+
+    let age = today.getFullYear() - birthdate.getFullYear()
+
+    const hasHadBirthdayThisYear =
+      today.getMonth() > birthdate.getMonth() ||
+      (today.getMonth() === birthdate.getMonth() && today.getDate() >= birthdate.getDate())
+    
+    if (!hasHadBirthdayThisYear) {
+      age --
+    }
+
+    const isAdult = age >= 18
+
+    showAuthorizationCheckbox.value = (!isAdult && !member.isAuthorizationSigned) || (isAdult && member.isAuthorizationSigned)
+  } catch (err) {
+    console.error('Error carregant autorització:', err)
+    isAuthorizationSigned.value = false
+    showAuthorizationCheckbox.value = false
+  }
+}
+
+const updateAuthorization = async (value) => {
+  if (!selectedMember.value) return
+
+  try {
+    await api.patch(`/members/${selectedMember.value}`, {
+      isAuthorizationSigned: value,
+    })
+
+    const member = members.value.find(
+      (m) => m.id === selectedMember.value
+    )
+
+    if (member) {
+      member.isAuthorizationSigned = value
+    }
+
+    checkFamilyAuthorization(selectedMember.value)
+
+    Notify.create({
+      type: 'positive',
+      message: 'Signatura d\'autorització actualitzada',
+    })
+  } catch (err) {
+    console.error('Error actualitzant autorització:', err)
+    isAuthorizationSigned.value = !value
+
+    Notify.create({
+      type: 'negative',
+      message: 'Error actualitzant autorització',
+    })
   }
 }
 
@@ -985,3 +722,400 @@ watch(error, (err) => {
   }
 })
 </script>
+
+<template>
+  <q-page padding>
+    <div class="row justify-center items-center q-gutter-md q-mb-md">
+      <div class="col-auto">
+        <SpSelect
+          v-model="selectedMember"
+          :options="members"
+          :loading="loadingMembers"
+          :option-label="memberLabel"
+          option-value="id"
+          label="Membre"
+          @update:model-value="
+            (val) => {
+              fetchBalance(val)
+              fetchFamilyBalance(val)
+              fetchFamilyMovements(val)
+              fetchAuthorization(val)
+              checkFamilyAuthorization(val)
+            }
+          "
+        />
+      </div>
+
+      <div class="col-auto">
+        <q-checkbox
+          v-if="showAuthorizationCheckbox"
+          v-model="isAuthorizationSigned"
+          label="Autorització signada"
+          @update:model-value="updateAuthorization"
+        />
+      </div>
+
+      <div
+        v-if="showFamilyAuthorizationWarning"
+        class="col-auto text-negative text-weight-bold"
+      >
+        ⚠ Hi ha algun menor en la família sense l'autorització signada
+      </div>
+    </div>
+
+    <div class="row q-col-gutter-lg">
+      <div class="col-6">
+        <div class="q-pa-md">
+          <q-card flat bordered>
+            <q-card-section class="text-orange text-bold"> Pagar </q-card-section>
+
+            <q-separator />
+
+            <div class="q-pa-md">
+              <div class="row q-col-gutter-sm text-bold">
+                <div class="col"></div>
+                <div class="col text-center">Assignat</div>
+                <div class="col text-center">Pagat</div>
+                <div class="col text-center">Diferència</div>
+                <div class="col text-center">Nou pagament</div>
+              </div>
+
+              <div
+                v-for="row in rows"
+                :key="row.label"
+                class="row q-col-gutter-sm items-center q-mt-sm"
+              >
+                <div class="col" :class="row.label === 'Totals' ? 'text-bold' : ''">
+                  {{ row.label }}
+                </div>
+                <div class="col text-center">
+                  <q-input
+                    :model-value="formatCurrency(row.assigned)"
+                    dense
+                    outlined
+                    readonly
+                    tabindex="-1"
+                  />
+                </div>
+                <div class="col text-center">
+                  <q-input
+                    :model-value="formatCurrency(row.payed)"
+                    dense
+                    outlined
+                    readonly
+                    tabindex="-1"
+                  />
+                </div>
+                <div class="col text-center">
+                  <q-input
+                    :model-value="formatCurrency(row.diff)"
+                    dense
+                    outlined
+                    readonly
+                    tabindex="-1"
+                  />
+                </div>
+                <div class="col text-center">
+                  <q-input
+                    v-if="row.label !== 'Totals'"
+                    :model-value="row.newPaymentDisplay"
+                    @update:model-value="(val) => updateNewPayment(row, val)"
+                    @blur="() => formatTwoDecimals(row)"
+                    @focus="(e) => e.target.select()"
+                    type="text"
+                    inputmode="decimal"
+                    dense
+                    outlined
+                    suffix="€"
+                  />
+                  <q-input
+                    v-else
+                    :model-value="formatCurrency(totalNewPayments)"
+                    dense
+                    outlined
+                    readonly
+                    tabindex="-1"
+                  />
+                </div>
+              </div>
+              <div class="flex items-center justify-center q-mt-lg q-gutter-md">
+                <q-option-group
+                  v-model="paymentMethod"
+                  :options="[
+                    { label: 'Efectiu', value: 'cash' },
+                    { label: 'Banc', value: 'bank' },
+                  ]"
+                  type="radio"
+                  inline
+                />
+                <q-btn
+                  label="PAGAR"
+                  color="primary"
+                  unelevated
+                  @click="submitPayments"
+                  :disable="!selectedMember || !hasAnyPayment"
+                />
+              </div>
+            </div>
+          </q-card>
+        </div>
+
+        <div class="q-mt-lg q-pa-md">
+          <q-card flat bordered>
+            <q-card-section class="text-orange text-bold">Assignar</q-card-section>
+            <q-separator />
+
+            <div class="q-pa-md">
+              <div class="row items-center q-gutter-md">
+                <div class="col-auto">
+                  <q-option-group
+                    v-model="assignmentConcept"
+                    :options="[
+                      { label: 'Quota', value: 1 },
+                      { label: 'Rifa', value: 3 },
+                    ]"
+                    type="radio"
+                    inline
+                  />
+                </div>
+
+                <div class="col">
+                  <q-input
+                    v-model.number="assignmentAmount"
+                    label="Import"
+                    suffix="€"
+                    type="number"
+                    dense
+                    outlined
+                    min="0"
+                  />
+                </div>
+
+                <div class="col-auto">
+                  <q-btn
+                    label="Assignar"
+                    color="primary"
+                    unelevated
+                    @click="submitAssignment"
+                    :disable="!selectedMember || !assignmentAmount || assignmentAmount <= 0"
+                  />
+                </div>
+              </div>
+            </div>
+          </q-card>
+        </div>
+
+        <div class="q-mt-lg q-pa-md">
+          <q-card flat bordered>
+            <q-card-section class="text-orange text-bold">Pagar per familia</q-card-section>
+            <q-separator />
+
+            <div class="q-pa-md">
+              <div class="row q-col-gutter-sm text-bold">
+                <div class="col"></div>
+                <div class="col text-center">Assignat</div>
+                <div class="col text-center">Pagat</div>
+                <div class="col text-center">Diferència</div>
+                <div class="col text-center">Nou pagament</div>
+              </div>
+
+              <div
+                v-for="row in [
+                  ...familyRows,
+                  {
+                    label: 'Totals',
+                    ...familyTotals,
+                    newPaymentDisplay: formatCurrency(totalFamilyNewPayments),
+                  },
+                ]"
+                :key="row.label"
+                class="row q-col-gutter-sm items-center q-mt-sm"
+              >
+                <div class="col" :class="row.label === 'Totals' ? 'text-bold' : ''">
+                  {{ row.label }}
+                </div>
+                <div class="col text-center">
+                  <q-input
+                    :model-value="formatCurrency(row.assigned)"
+                    dense
+                    outlined
+                    readonly
+                    tabindex="-1"
+                  />
+                </div>
+                <div class="col text-center">
+                  <q-input
+                    :model-value="formatCurrency(row.payed)"
+                    dense
+                    outlined
+                    readonly
+                    tabindex="-1"
+                  />
+                </div>
+                <div class="col text-center">
+                  <q-input
+                    :model-value="formatCurrency(row.diff)"
+                    dense
+                    outlined
+                    readonly
+                    tabindex="-1"
+                  />
+                </div>
+                <div class="col text-center" v-if="row.label !== 'Totals'">
+                  <q-input
+                    :model-value="row.newPaymentDisplay"
+                    @update:model-value="(val) => updateFamilyNewPayment(row, val)"
+                    @blur="() => formatTwoDecimals(row, 'family')"
+                    @focus="(e) => e.target.select()"
+                    type="text"
+                    inputmode="decimal"
+                    dense
+                    outlined
+                    suffix="€"
+                  />
+                </div>
+                <div class="col text-center" v-else>
+                  <q-input
+                    :model-value="formatCurrency(totalFamilyNewPayments)"
+                    dense
+                    outlined
+                    readonly
+                    tabindex="-1"
+                  />
+                </div>
+              </div>
+              <div class="flex items-center justify-center q-mt-lg q-gutter-md">
+                <q-option-group
+                  v-model="familyPaymentMethod"
+                  :options="[
+                    { label: 'Efectiu', value: 'cash' },
+                    { label: 'Banc', value: 'bank' },
+                  ]"
+                  type="radio"
+                  inline
+                />
+                <q-btn
+                  label="PAGAR FAMÍLIA"
+                  color="primary"
+                  unelevated
+                  @click="submitFamilyPayments"
+                  :disable="totalFamilyNewPayments <= 0"
+                />
+              </div>
+            </div>
+          </q-card>
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="q-pa-md">
+          <q-card flat bordered>
+            <q-card-section class="text-orange text-bold"> Moviments realitzats </q-card-section>
+            <q-separator />
+
+            <div v-if="loading" class="row justify-center q-my-md">
+              <q-spinner-dots size="40px" color="primary" />
+            </div>
+
+            <div v-else-if="error">
+              <q-banner class="bg-red text-white">
+                Error carregant moviments: {{ error.message }}
+                <q-btn
+                  flat
+                  color="white"
+                  label="Reintentar"
+                  @click="fetchMovements(selectedMember)"
+                />
+              </q-banner>
+            </div>
+
+            <div v-else-if="!movements || movements.length === 0" class="q-pa-md">
+              No s'han trobat moviments per aquest membre.
+            </div>
+
+            <SpTable
+              v-else
+              :rows="movements"
+              :columns="columns"
+              row-key="id"
+              class="q-mt-md table-header-bg"
+              :loading="loading"
+              v-model:pagination="pagination"
+            />
+          </q-card>
+        </div>
+
+        <div class="q-pa-md">
+          <q-card flat bordered>
+            <q-card-section class="text-orange text-bold"> Moviments família </q-card-section>
+            <q-separator />
+
+            <div v-if="loadingFamilyMovements" class="row justify-center q-my-md">
+              <q-spinner-dots size="40px" color="primary" />
+            </div>
+
+            <div v-else-if="familyMovements.length === 0" class="q-pa-md">
+              No s'han trobat moviments per la família.
+            </div>
+
+            <SpTable
+              v-else
+              :rows="familyMovements"
+              :loading="loadingFamilyMovements"
+              row-key="id"
+              class="q-mt-md table-header-bg"
+              v-model:pagination="pagination"
+              :columns="columns"
+            >
+              <template v-slot:body-cell-date="props">
+                <q-td>
+                  {{ new Date(props.row.date).toLocaleDateString() }}
+                </q-td>
+              </template>
+
+              <template v-slot:body-cell-type="props">
+                <q-td>
+                  {{ props.row.type === 1 ? 'Assignació' : 'Pagament' }}
+                </q-td>
+              </template>
+
+              <template v-slot:body-cell-concept="props">
+                <q-td>
+                  {{
+                    props.row.concept === 1 ? 'Quota' : props.row.concept === 3 ? 'Rifa' : 'Loteria'
+                  }}
+                </q-td>
+              </template>
+
+              <template v-slot:body-cell-amount="props">
+                <q-td class="text-right"> {{ formatCurrency(props.row.amount) }} </q-td>
+              </template>
+            </SpTable>
+          </q-card>
+        </div>
+      </div>
+    </div>
+
+    <q-dialog v-model="showEmailDialog" persistent>
+      <q-card style="min-width: 400px">
+        <q-card-section>
+          <div class="text-h6">Confirmar correu</div>
+          <div class="text-subtitle2 q-mt-sm">Introdueix o confirma el correu del membre:</div>
+          <q-input
+            v-model="memberEmail"
+            label="Correu electrònic"
+            type="email"
+            dense
+            autofocus
+            :rules="[(val) => !!val || 'El correu és obligatori']"
+          />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" color="negative" @click="cancelAndShowPDF" />
+          <q-btn label="Acceptar" color="primary" :loading="sending" @click="confirmAndSend" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+  </q-page>
+</template>
