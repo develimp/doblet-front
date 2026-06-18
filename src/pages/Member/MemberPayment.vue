@@ -7,6 +7,7 @@ import SpSelect from 'src/components/SpSelect.vue'
 import { useFetch } from 'src/composables/useFetch'
 
 const selectedMember = ref(null)
+const selectedFamily = ref(null)
 const paymentMethod = ref('cash')
 const isAuthorizationSigned = ref(false)
 const showAuthorizationCheckbox = ref(false)
@@ -19,6 +20,7 @@ const {
 } = useFetch('/members', {
   params: {
     filter: {
+      where: { isRegistered: 1 },
       order: ['surname ASC'],
     },
   },
@@ -28,6 +30,17 @@ const memberLabel = (member) => {
   if (!member) return ''
   return `${member.name} ${member.surname}`
 }
+
+const familyMembers = computed(() => {
+  if (!selectedMember.value || !members.value?.length) return []
+
+  const selected = members.value.find((m) => m.id === selectedMember.value)
+  if (!selected?.familyFk) return []
+
+  return members.value.filter(
+    (m) => m.familyFk === selected.familyFk && m.id !== selectedMember.value,
+  )
+})
 
 const getAge = (birthdate) => {
   const today = new Date()
@@ -69,6 +82,45 @@ const checkFamilyAuthorization = (memberId) => {
   })
 
   showFamilyAuthorizationWarning.value = hasMinorWithoutAuthorization
+}
+
+const resetPageState = () => {
+  selectedFamily.value = null
+  paymentMethod.value = 'cash'
+  familyPaymentMethod.value = 'cash'
+  assignmentConcept.value = 1
+  assignmentAmount.value = null
+  assignmentDescription.value = ''
+  currentMember.value = null
+  pendingPaymentData = null
+  movements.value = []
+  familyMovements.value = []
+
+  fetchBalance(null)
+  fetchFamilyBalance(null)
+  fetchFamilyMovements(null)
+  fetchAuthorization(null)
+  checkFamilyAuthorization(null)
+}
+
+const loadMemberRelatedData = (memberId) => {
+  if (!memberId) {
+    resetPageState()
+    return
+  }
+
+  fetchBalance(memberId)
+  fetchFamilyBalance(memberId)
+  fetchFamilyMovements(memberId)
+  fetchAuthorization(memberId)
+  checkFamilyAuthorization(memberId)
+}
+
+const selectFamily = (val) => {
+  if (!val || val === selectedMember.value) return
+
+  selectedFamily.value = null
+  selectedMember.value = val
 }
 
 const rows = ref([
@@ -510,6 +562,11 @@ const submitPayments = async () => {
     }
 
     await fetchBalance(memberId)
+    await fetchFamilyBalance(memberId)
+    await refetchMovements({
+      url: `/movements/by-member/${memberId}/current`,
+    })
+    await fetchFamilyMovements(memberId)
 
     rows.value.forEach((row) => {
       if (row.label !== 'Totals') {
@@ -564,6 +621,10 @@ const submitFamilyPayments = async () => {
     })
 
     await fetchFamilyBalance(selectedMember.value)
+    await fetchBalance(selectedMember.value)
+    await refetchMovements({
+      url: `/movements/by-member/${selectedMember.value}/current`,
+    })
     await fetchFamilyMovements(selectedMember.value)
   } catch (err) {
     console.error('Error guardant els pagaments familiars:', err)
@@ -573,6 +634,7 @@ const submitFamilyPayments = async () => {
 
 const assignmentConcept = ref(1)
 const assignmentAmount = ref(null)
+const assignmentDescription = ref('')
 
 const submitAssignment = async () => {
   if (!selectedMember.value) {
@@ -585,15 +647,20 @@ const submitAssignment = async () => {
       amount: assignmentAmount.value,
       idType: 1,
       idConcept: assignmentConcept.value,
-      description:
-        assignmentConcept.value === 1 ? 'assignació manual de quota' : 'assignació manual de rifa',
+      description: assignmentDescription.value,
     })
 
     Notify.create({ type: 'positive', message: 'Assignació guardada correctament' })
 
     await fetchBalance(selectedMember.value)
+    await fetchFamilyBalance(selectedMember.value)
+    await refetchMovements({
+      url: `/movements/by-member/${selectedMember.value}/current`,
+    })
+    await fetchFamilyMovements(selectedMember.value)
 
     assignmentAmount.value = null
+    assignmentDescription.value = ''
   } catch (err) {
     console.error('Error guardant assignació:', err)
     Notify.create({ type: 'negative', message: 'Error guardant assignació' })
@@ -703,10 +770,15 @@ watch(errorMembers, (err) => {
 
 watch(selectedMember, (val) => {
   if (!val) {
-    movements.value = []
+    resetPageState()
     return
   }
 
+  if (selectedFamily.value !== val) {
+    selectedFamily.value = null
+  }
+
+  loadMemberRelatedData(val)
   refetchMovements({
     url: `/movements/by-member/${val}/current`,
   })
@@ -734,15 +806,19 @@ watch(error, (err) => {
           :option-label="memberLabel"
           option-value="id"
           label="Membre"
-          @update:model-value="
-            (val) => {
-              fetchBalance(val)
-              fetchFamilyBalance(val)
-              fetchFamilyMovements(val)
-              fetchAuthorization(val)
-              checkFamilyAuthorization(val)
-            }
-          "
+        />
+      </div>
+
+      <div class="col-auto">
+        <SpSelect
+          :model-value="selectedFamily"
+          :options="familyMembers"
+          :loading="loadingMembers"
+          :option-label="memberLabel"
+          option-value="id"
+          label="Familiar"
+          :disable="!selectedMember"
+          @update:model-value="selectFamily"
         />
       </div>
 
@@ -827,6 +903,7 @@ watch(error, (err) => {
                     dense
                     outlined
                     suffix="€"
+                    :disable="!selectedMember"
                   />
                   <q-input
                     v-else
@@ -847,6 +924,7 @@ watch(error, (err) => {
                   ]"
                   type="radio"
                   inline
+                  :disable="!selectedMember"
                 />
                 <q-btn
                   label="PAGAR"
@@ -876,18 +954,29 @@ watch(error, (err) => {
                     ]"
                     type="radio"
                     inline
+                    :disable="!selectedMember"
                   />
                 </div>
 
-                <div class="col">
+                <div class="col-2">
                   <q-input
                     v-model.number="assignmentAmount"
                     label="Import"
                     suffix="€"
-                    type="number"
                     dense
                     outlined
                     min="0"
+                    :disable="!selectedMember"
+                  />
+                </div>
+
+                <div class="col-grow">
+                  <q-input
+                    v-model="assignmentDescription"
+                    label="Descripció"
+                    dense
+                    outlined
+                    :disable="!selectedMember"
                   />
                 </div>
 
@@ -897,7 +986,7 @@ watch(error, (err) => {
                     color="primary"
                     unelevated
                     @click="submitAssignment"
-                    :disable="!selectedMember || !assignmentAmount || assignmentAmount <= 0"
+                    :disable="!selectedMember || !assignmentAmount"
                   />
                 </div>
               </div>
@@ -972,6 +1061,7 @@ watch(error, (err) => {
                     dense
                     outlined
                     suffix="€"
+                    :disable="!selectedMember"
                   />
                 </div>
                 <div class="col text-center" v-else>
@@ -993,6 +1083,7 @@ watch(error, (err) => {
                   ]"
                   type="radio"
                   inline
+                  :disable="!selectedMember"
                 />
                 <q-btn
                   label="PAGAR FAMÍLIA"

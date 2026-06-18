@@ -12,6 +12,7 @@ const emit = defineEmits(['update:modelValue'])
 const attrs = useAttrs()
 
 const filteredOptions = ref([])
+const inputValue = ref('')
 
 watch(
   () => props.options,
@@ -19,6 +20,14 @@ watch(
     filteredOptions.value = val
   },
   { immediate: true },
+)
+
+watch(
+  () => props.modelValue,
+  () => {
+    filteredOptions.value = props.options
+    inputValue.value = ''
+  },
 )
 
 const filterFn = (val, update) => {
@@ -54,8 +63,10 @@ const filterFn = (val, update) => {
     :map-options="mapOptions"
     v-bind="$attrs"
     :model-value="modelValue"
+    :input-value="inputValue"
     @filter="filterFn"
     @update:model-value="(val) => emit('update:modelValue', val)"
+    @update:input-value="(val) => inputValue.value = val"
   >
     <template #prepend>
       <q-icon name="search" />
