@@ -16,8 +16,14 @@ const linksList = [
   },
   {
     title: 'Fallers',
-    caption: 'Pagament dels fallers',
+    caption: 'Gestió de fallers',
     icon: 'groups',
+    link: '/member/basicData',
+  },
+  {
+    title: 'Pagaments',
+    caption: 'Pagament dels fallers',
+    icon: 'money',
     link: '/member/payment',
   },
   {

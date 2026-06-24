@@ -5,6 +5,11 @@ const routes = [
     children: [
       { path: '', component: () => import('pages/IndexPage.vue'), meta: { requiresAuth: true } },
       {
+        path: 'member/basicData',
+        component: () => import('pages/Member/MemberBasicData.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: 'member/payment',
         component: () => import('pages/Member/MemberPayment.vue'),
         meta: { requiresAuth: true },
