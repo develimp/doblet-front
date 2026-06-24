@@ -181,11 +181,21 @@ onMounted(async () => {
 
       <div class="row wrap q-gutter-md">
 
-        <q-card class="quick-card cursor-pointer" @click="goTo('member/payment')">
+        <q-card class="quick-card cursor-pointer" @click="goTo('member/basicData')">
           <q-card-section class="row items-center q-gutter-md">
             <q-icon name="groups" size="28px" color="primary" />
             <div>
-              <div class="text-h6">Fallers</div>
+              <div class="text-h6">Membres</div>
+              <div class="text-caption text-grey-7">Gestió de membres i familiars</div>
+            </div>
+          </q-card-section>
+        </q-card>
+
+        <q-card class="quick-card cursor-pointer" @click="goTo('member/payment')">
+          <q-card-section class="row items-center q-gutter-md">
+            <q-icon name="money" size="28px" color="primary" />
+            <div>
+              <div class="text-h6">Pagaments</div>
               <div class="text-caption text-grey-7">Gestió de pagaments dels fallers</div>
             </div>
           </q-card-section>
