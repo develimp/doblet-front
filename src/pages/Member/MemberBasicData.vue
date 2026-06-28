@@ -188,6 +188,121 @@ const FAMILY_NEW_OPTION = 'new-family'
 const showFamilyChangeDialog = ref(false)
 const selectedFamilyTarget = ref(null)
 
+const showNewMemberDialog = ref(false)
+const isCreating = ref(false)
+const selectedNewMemberTarget = ref(null)
+const newMemberForm = ref({
+  name: null,
+  surname: null,
+  birthdate: null,
+  gender: 'M',
+  dni: null,
+  address: null,
+  phone: null,
+  email: null,
+  familyFk: null,
+})
+const popupNewBirthdateRef = ref(null)
+
+const resetNewMemberForm = () => {
+  selectedNewMemberTarget.value = null
+  newMemberForm.value = {
+    name: null,
+    surname: null,
+    birthdate: null,
+    gender: 'M',
+    dni: null,
+    address: null,
+    phone: null,
+    email: null,
+    familyFk: null,
+  }
+}
+
+const openNewMemberDialog = () => {
+  resetNewMemberForm()
+  selectedNewMemberTarget.value = null
+  showNewMemberDialog.value = true
+}
+
+const memberOptions = computed(() => {
+  if (!members.value?.length) return []
+  const options = members.value.map((m) => ({
+    label: memberLabel(m),
+    value: m.id,
+  }))
+  return [{ label: 'Familia nova', value: FAMILY_NEW_OPTION }, ...options]
+})
+
+watch(selectedNewMemberTarget, (val) => {
+  if (!val || val === FAMILY_NEW_OPTION || !members.value?.length) {
+    newMemberForm.value.familyFk = null
+    return
+  }
+  const member = members.value.find((m) => m.id === val)
+  newMemberForm.value.familyFk = member?.familyFk || null
+})
+
+const createNewMember = async () => {
+  isCreating.value = true
+
+  try {
+    let familyFk = newMemberForm.value.familyFk
+
+    if (selectedNewMemberTarget.value === FAMILY_NEW_OPTION) {
+      const familyResponse = await api.post('/families', { discount: 0 })
+      familyFk = familyResponse?.data?.id
+    }
+
+    const payload = {
+      name: newMemberForm.value.name,
+      surname: newMemberForm.value.surname,
+      familyFk: familyFk,
+      isRegistered: true,
+    }
+
+    if (newMemberForm.value.birthdate) {
+      payload.birthdate = toIsoMidnightUTC(newMemberForm.value.birthdate)
+    }
+    if (newMemberForm.value.gender) {
+      payload.gender = newMemberForm.value.gender
+    }
+    if (newMemberForm.value.dni != null && newMemberForm.value.dni !== '') {
+      payload.dni = newMemberForm.value.dni
+    }
+    if (newMemberForm.value.address != null && newMemberForm.value.address !== '') {
+      payload.address = newMemberForm.value.address
+    }
+    if (newMemberForm.value.phone != null && newMemberForm.value.phone !== '') {
+      payload.phoneNumber = newMemberForm.value.phone
+    }
+    if (newMemberForm.value.email != null && newMemberForm.value.email !== '') {
+      payload.email = newMemberForm.value.email
+    }
+
+    const response = await api.post('/members', payload)
+
+    Notify.create({
+      type: 'positive',
+      message: 'Membre creat correctament',
+    })
+
+    await refetchMembers()
+    if (response?.data?.id) {
+      selectedMember.value = response.data.id
+    }
+    showNewMemberDialog.value = false
+  } catch (err) {
+    Notify.create({
+      type: 'negative',
+      message: 'Error creant el membre',
+      caption: err?.message || String(err),
+    })
+  } finally {
+    isCreating.value = false
+  }
+}
+
 const familyChangeOptions = computed(() => {
   if (!members.value?.length || !selectedMember.value) return []
 
@@ -299,7 +414,154 @@ watch(errorMembers, (err) => {
           @update:model-value="selectFamily"
         />
       </div>
+
+      <div class="col-auto">
+        <q-btn
+          label="Alta nova"
+          color="primary"
+          @click="openNewMemberDialog"
+        />
+      </div>
     </div>
+
+    <q-dialog v-model="showNewMemberDialog" persistent>
+      <q-card style="min-width: 360px; max-width: 520px;">
+        <q-card-section>
+          <div class="text-h6">Alta nova</div>
+          <div class="q-pa-md">
+            <div class="row q-col-gutter-md q-row-gutter-md">
+              <div class="col-12 col-md-6">
+                <q-input
+                  v-model="newMemberForm.name"
+                  label="Nom"
+                  outlined
+                  dense
+                />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <q-input
+                  v-model="newMemberForm.surname"
+                  label="Cognoms"
+                  outlined
+                  dense
+                />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <q-input
+                  outlined
+                  v-model="newMemberForm.birthdate"
+                  label="Data de naixement"
+                  class="cursor-pointer"
+                  readonly
+                  @click="popupNewBirthdateRef?.value?.show?.()"
+                  dense
+                >
+                  <template v-slot:append>
+                    <q-icon
+                      name="event"
+                      class="cursor-pointer"
+                      @click="popupNewBirthdateRef?.value?.show?.()"
+                    />
+                  </template>
+
+                  <q-popup-proxy
+                    ref="popupNewBirthdateRef"
+                    transition-show="scale"
+                    transition-hide="scale"
+                  >
+                    <q-date
+                      v-model="newMemberForm.birthdate"
+                      @update:model-value="popupNewBirthdateRef.hide()"
+                      color="primary"
+                    />
+                  </q-popup-proxy>
+                </q-input>
+              </div>
+
+              <div class="col-12 col-md-6 q-mt-sm gender-checkboxes">
+                <div class="row q-gutter-md items-center">
+                  <q-checkbox
+                    :model-value="newMemberForm.gender === 'M'"
+                    @update:model-value="(val) => newMemberForm.gender = val ? 'M' : null"
+                    label="M"
+                    dense
+                  />
+                  <q-checkbox
+                    :model-value="newMemberForm.gender === 'F'"
+                    @update:model-value="(val) => newMemberForm.gender = val ? 'F' : null"
+                    label="F"
+                    dense
+                  />
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <q-input
+                  v-model="newMemberForm.dni"
+                  label="Dni"
+                  outlined
+                  dense
+                />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <q-input
+                  v-model="newMemberForm.address"
+                  label="Adreça"
+                  outlined
+                  dense
+                />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <q-input
+                  v-model="newMemberForm.phone"
+                  label="Telèfon"
+                  outlined
+                  dense
+                />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <q-input
+                  v-model="newMemberForm.email"
+                  label="Email"
+                  type="email"
+                  outlined
+                  dense
+                />
+              </div>
+
+              <div class="col-12">
+                <SpSelect
+                  v-model="selectedNewMemberTarget"
+                  :options="memberOptions"
+                  :loading="loadingMembers"
+                  label="Selecciona un membre de la família"
+                  emit-value
+                  map-options
+                  option-label="label"
+                  option-value="value"
+                />
+              </div>
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel·lar" @click="showNewMemberDialog = false" text-color="primary" :disable="isCreating" />
+          <q-btn
+            label="Guardar"
+            color="primary"
+            @click="createNewMember"
+            :loading="isCreating"
+            :disable="isCreating || !newMemberForm.name || !newMemberForm.surname || !newMemberForm.birthdate || (!newMemberForm.familyFk && selectedNewMemberTarget !== FAMILY_NEW_OPTION)"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <div v-if="selectedMember" class="q-mt-lg q-pa-md">
       <q-card flat bordered>
@@ -321,7 +583,6 @@ watch(errorMembers, (err) => {
             <q-btn
               :label="registrationActionLabel"
               :color="registrationActionColor"
-              unelevated
               dense
               @click="toggleRegistration"
               :disable="!selectedMember"
@@ -425,14 +686,12 @@ watch(errorMembers, (err) => {
               <q-btn
                 label="Canviar familia"
                 color="secondary"
-                unelevated
                 @click="openFamilyChangeDialog"
                 :disable="!selectedMember || isUpdating"
               />
               <q-btn
                 label="Actualitzar"
                 color="primary"
-                unelevated
                 @click="updateMember"
                 :disable="!selectedMember || isUpdating"
                 :loading="isUpdating"
@@ -479,7 +738,6 @@ watch(errorMembers, (err) => {
             <q-btn
               label="Canviar"
               color="primary"
-              unelevated
               @click="changeFamily"
               :disable="!selectedFamilyTarget || isUpdating"
             />
@@ -489,3 +747,9 @@ watch(errorMembers, (err) => {
     </div>
   </q-page>
 </template>
+
+<style scoped>
+.gender-checkboxes :deep(.q-checkbox__label) {
+  color: grey;
+}
+</style>
