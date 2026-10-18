@@ -256,11 +256,13 @@ const submitForm = async () => {
     $q.notify({ type: 'positive', message: 'Sorteig afegit correctament!' })
 
     await lotteriesRefetch({
-      params: {
-        filter: {
-          where: { lotteryNameFk: selectedLotteryName.value },
-          include: [{ relation: 'member' }],
-          order: ['lotteryId DESC'],
+      options: {
+        params: {
+          filter: {
+            where: { lotteryNameFk: selectedLotteryName.value },
+            include: [{ relation: 'member' }],
+            order: ['lotteryId DESC'],
+          },
         },
       },
     })
@@ -295,11 +297,13 @@ watch(dataLotteryNames, async (list) => {
 watch(selectedLotteryName, async (newVal) => {
   if (!newVal) return
   await lotteriesRefetch({
-    params: {
-      filter: {
-        where: { lotteryNameFk: newVal },
-        include: [{ relation: 'member' }],
-        order: ['lotteryId DESC'],
+    options: {
+      params: {
+        filter: {
+          where: { lotteryNameFk: newVal },
+          include: [{ relation: 'member' }],
+          order: ['lotteryId DESC'],
+        },
       },
     },
   })
@@ -351,11 +355,13 @@ const assignLottery = async () => {
       $q.notify({ type: 'positive', message: 'Loteria assignada correctament!' })
 
       await lotteriesRefetch({
-        params: {
-          filter: {
-            where: { lotteryNameFk: selectedLotteryName.value },
-            include: [{ relation: 'member' }],
-            order: ['lotteryId DESC'],
+        options: {
+          params: {
+            filter: {
+              where: { lotteryNameFk: selectedLotteryName.value },
+              include: [{ relation: 'member' }],
+              order: ['lotteryId DESC'],
+            },
           },
         },
       })
