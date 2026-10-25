@@ -32,3 +32,7 @@ yarn-error.log*
 # local .env files
 .env.development
 .env.production
+
+# Cypress related directories and files
+e2e/screenshots
+e2e/downloads

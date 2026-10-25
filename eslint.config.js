@@ -69,5 +69,19 @@ export default [
     }
   },
 
+  {
+    // Cypress e2e tests: describe, it, before, beforeEach... (mocha) + cy, Cypress, expect
+    files: [ 'e2e/**/*.js' ],
+    languageOptions: {
+      globals: {
+        ...globals.mocha,
+        cy: 'readonly',
+        Cypress: 'readonly',
+        expect: 'readonly',
+        assert: 'readonly'
+      }
+    }
+  },
+
   prettierSkipFormatting
 ]
